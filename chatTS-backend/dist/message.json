@@ -1,0 +1,11 @@
+{
+    "chat_general": [
+        {
+            "id": "msg_1790313706286",
+            "senderId": "usr_1",
+            "text": "Борис, а ты что тут делаешь?",
+            "timestamp": 1790313706286,
+            "chatId": "chat_general"
+        }
+    ]
+}
