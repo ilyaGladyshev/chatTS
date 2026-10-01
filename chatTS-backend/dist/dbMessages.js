@@ -20,8 +20,14 @@ async function readMessagesFile() {
     }
 }
 async function writeMessageFile(data) {
-    await promises_1.default.writeFile(FILE_PATH, JSON.stringify(data, null, 4), 'utf-8');
-    console.log("Записан файл " + FILE_PATH);
+    try {
+        const jsonString = JSON.stringify(data, null, 4);
+        await promises_1.default.writeFile(FILE_PATH, jsonString, 'utf-8');
+        console.log("Сообщения сохранены в файл " + FILE_PATH);
+    }
+    catch (error) {
+        console.log("Не удалось записать сообщения в файл: " + error.message);
+    }
 }
 async function saveMessageToHistory(chatId, message) {
     const db = await readMessagesFile();

@@ -37,6 +37,8 @@ const http = __importStar(require("http"));
 const url_1 = require("url");
 const ws_1 = require("ws");
 const dbMessages_1 = require("./dbMessages");
+const dbUsers_1 = require("./dbUsers");
+const dbChats_1 = require("./dbChats");
 const PORT = 5000;
 const jsonHeader = { 'Content-Type': 'application/json; charset=utf-8' };
 function getRequestBody(req) {
@@ -56,50 +58,84 @@ function getRequestBody(req) {
 const server = http.createServer(async (req, res) => {
     const url = new url_1.URL(req.url || '', `http://${req.headers.host}`);
     const pathname = url.pathname;
-    console.log("Получен новый запрос " + pathname);
     try {
         if (req.method === 'POST' && pathname === '/api/auth/login') {
             const { login, password } = await getRequestBody(req);
-            if (login === 'ilya' && password === '123') {
-                const responseData = {
-                    status: 'success',
-                    user: {
-                        id: "usr_1",
-                        login: "ilya",
-                        firstName: "Илья",
-                        lastName: "Гладышев"
-                    }
-                };
-                res.writeHead(200, jsonHeader);
-                return res.end(JSON.stringify(responseData));
+            if (!login) {
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ response: { status: 'not_found', error: "Логин не указан" } }));
             }
-            else if (login === 'boris' && password === '123') {
-                const responseData = {
-                    status: 'success',
-                    user: {
-                        id: "usr_2",
-                        login: "boris",
-                        firstName: "Борис",
-                        lastName: "Бритва"
-                    }
-                };
-                res.writeHead(200, jsonHeader);
-                return res.end(JSON.stringify(responseData));
+            if (!password) {
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ response: { status: 'wrong_password', error: "Пароль не указан" } }));
+            }
+            const responseData = await (0, dbUsers_1.findUserBylogin)(login, password);
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(responseData));
+        }
+        else if (req.method === 'POST' && pathname === '/api/chats/find_chat') {
+            const { curentUserId, targetUserId } = await getRequestBody(req);
+            const existingChat = await (0, dbChats_1.findChatByCurrentAndTarget)(curentUserId, targetUserId);
+            res.writeHead(200, jsonHeader);
+            if (existingChat) {
+                return res.end(JSON.stringify({ status: 'found', chatId: existingChat.id }));
             }
             else {
-                const errorData = {
-                    status: "wrong_password",
-                    error: "Неверное имя пользователя или пароль"
-                };
-                res.writeHead(401, jsonHeader);
-                return res.end(JSON.stringify(errorData));
+                return res.end(JSON.stringify({ status: 'not_found' }));
             }
         }
-        else if (req.method === 'GET' && pathname === '/api/chat/history') {
-            const chatId = url.searchParams.get('chatId') || 'chat_general';
-            const history = await (0, dbMessages_1.getChatHistory)(chatId);
+        else if (req.method === 'POST' && pathname === '/api/chats/create') {
+            const { participaints } = await getRequestBody(req);
+            const chats = await (0, dbChats_1.createChat)(participaints);
             res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(history));
+            return res.end(JSON.stringify(Object.keys(chats.id)));
+        }
+        else if (req.method === 'GET' && pathname === '/api/chats/history_group') {
+            const chats = await (0, dbChats_1.getChatHistory)();
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(Object.keys(chats.chats)));
+            /*} else if(req.method === 'GET' && pathname === '/api/chat/history'){
+                const chatId = url.searchParams.get('chatId') || 'chat_general';
+                const history = await getChatHistory(chatId);
+                res.writeHead(200, jsonHeader);
+                return res.end(JSON.stringify(history));*/
+        }
+        else if (req.method === 'POST' && pathname === '/api/auth/register') {
+            const { login, firstName, lastName, password } = await getRequestBody(req);
+            if (!login || !firstName || !lastName) {
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Заполнены не все обязательные поля" }));
+            }
+            const existingUser = await (0, dbUsers_1.findUserByloginOnly)(login);
+            if (existingUser?.status != "not_found") {
+                res.writeHead(409, jsonHeader);
+                return res.end(JSON.stringify({ error: "Этот логин уже занят" }));
+            }
+            console.log("start add new user");
+            const newUser = await (0, dbUsers_1.createUser)(login, firstName, lastName, password);
+            res.writeHead(201, jsonHeader);
+            return res.end(JSON.stringify({
+                success: true,
+                user: newUser
+            }));
+        }
+        else if (req.method === 'GET' && pathname === '/api/auth/users') {
+            const users = await (0, dbUsers_1.readUsersFile)();
+            const logins = Object.keys(users.users);
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(logins));
+        }
+        else if (req.method === 'GET' && pathname === '/api/auth/usersName') {
+            const users = await (0, dbUsers_1.readUsersFile)();
+            const allUsers = Object.values(users.users);
+            const usersPublic = allUsers.map((user) => {
+                return {
+                    id: user.id,
+                    userName: user.firstName + " " + user.lastName
+                };
+            });
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(usersPublic));
         }
         else {
             res.writeHead(404, jsonHeader);

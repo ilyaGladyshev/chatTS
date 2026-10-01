@@ -1,11 +1,4 @@
-interface Message {
-    id: string;
-    senderId: string;
-    text: string;
-    timestamp: number;
-    chatId: string;
-}
-export declare function saveMessageToHistory(chatId: string, message: Message): Promise<void>;
-export declare function getChatHistory(chatId: string): Promise<Message[]>;
-export {};
+import { IMessage } from './types/message';
+export declare function saveMessageToHistory(chatId: string, message: IMessage): Promise<void>;
+export declare function getChatHistory(chatId: string): Promise<IMessage[]>;
 //# sourceMappingURL=dbMessages.d.ts.map

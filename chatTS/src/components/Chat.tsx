@@ -1,28 +1,24 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {type UserProfile } from '../types/auth';
+import {type IUserProfile, type IUserPublic } from '../types/auth';
+import { type IMessage } from '../types/message';
 import '../App.css';
+import type { IChatData } from '../types/chats';
 
-interface Message{
-    id: string;
-    senderId: string;
-    text: string;
-    timestamp: number;
-    chatId: string;
+interface IChatProps{
+    currentUser: IUserProfile;
+    activeChatId: string | null;
+    targetUser: IUserPublic | null;
 }
 
-interface ChatProps{
-    currentUser: UserProfile;
-}
-
-const Chat = ({currentUser}: ChatProps) => {
-    const [messages, setMessages]  = useState<Message[]>([]);
+const Chat = ({currentUser, activeChatId, targetUser}: IChatProps) => {
+    const [messages, setMessages]  = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
     const socketRef = useRef<WebSocket | null>(null);
-    const recipientId = currentUser.id === 'usr_1' ? 'usr_2' : 'usr_1';
-
+    const [currentChatId, setCurrentChatId] = useState<string|null>(null);
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:5000');
         socketRef.current = ws;
+        setCurrentChatId(activeChatId);
         ws.onopen = () => {
             console.log("Туннель открыт! Отправляем паспорт...");
             ws.send(JSON.stringify({
@@ -41,15 +37,29 @@ const Chat = ({currentUser}: ChatProps) => {
         }
     }, [currentUser.id]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (currentChatId === null){
+        try {
+            const participaints: (string | undefined) [] = [currentUser.id, targetUser?.id];
+            const response = await fetch('/api/chats/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify({participaints: participaints})
+            }); 
+            const newChat: IChatData = await response.json();
+            setCurrentChatId(newChat.id);           
+        } catch (error) {
+            console.log("Не удалось создать новый чат!");    
+        }
+    }
     if (!inputText.trim() || !socketRef.current) return;
     const packet = {
         type: 'message',
         text: inputText.trim(),
         senderId: currentUser.id,
-        recipientId: recipientId,
-        chatId: 'chat_general'
+        recipientId: targetUser?.id,
+        chatId: currentChatId
     }
     socketRef.current.send(JSON.stringify(packet));
     setInputText('');
@@ -57,7 +67,7 @@ const Chat = ({currentUser}: ChatProps) => {
 
 return (
     <div className='chat-container'>
-        <p>Диалог с: {currentUser.id === 'usr_1' ? 'Борис Бритва' : 'Илья Гладышев'}</p>
+        <p>Диалог с: {targetUser?.userName}</p>
         <div className='chat-window'>
             {messages.map((msg) => {
                 const isMyMessage = msg.senderId === currentUser.id;

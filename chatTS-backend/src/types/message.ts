@@ -1,4 +1,4 @@
-export interface Message{
+export interface IMessage{
     id: string;
     senderId: string;
     text: string;
@@ -6,6 +6,6 @@ export interface Message{
     chatId: string;
 }
 
-export interface MessagesDB{
-    [chatId: string]: Message[];
+export interface IMessagesDB{
+    [chatId: string]: IMessage[];
 }

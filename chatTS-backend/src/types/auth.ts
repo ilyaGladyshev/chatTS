@@ -1,15 +1,26 @@
-export interface UserProfile {
+export interface IUserProfile {
     id: string;
     login: string;
     firstName: string;
     lastName: string;
-    passwordHash: string;
+    passwordHash?: string;
 }
- export interface AuthResponse {
-    status: 'success' | 'wrong_password' | 'not_found';
+export interface IUserPublic {
+    id: string;
+    userName: string;
+}
+ export interface IAuthResponse {
+    status: 'success' | 'wrong_password' | 'not_found' ;
     error?: string;
-    user?: UserProfile;
+    user?: IUserProfile;
  }
- export interface UsersDB{
-     [login: string]: UserProfile;
+  export enum EAuthStage{
+    Auth = 0,
+    EnterNewuser = 1,
+    Succes = 2,
+    Cancel = 3
  }
+export interface IUsersDB{
+    lastId: string;
+    users: {[login: string]: IUserProfile};
+}

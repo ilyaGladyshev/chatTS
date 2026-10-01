@@ -1,10 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
-import {Message, MessagesDB} from './types/message';
+import {IMessage, IMessagesDB} from './types/message';
 
 const FILE_PATH = path.join(__dirname, 'message.json');
 
-async function readMessagesFile(): Promise<MessagesDB> {
+async function readMessagesFile(): Promise<IMessagesDB> {
     try {
         const data = await fs.readFile(FILE_PATH, 'utf-8'); 
         return JSON.parse(data);       
@@ -14,7 +14,7 @@ async function readMessagesFile(): Promise<MessagesDB> {
     }
 }
 
-async function writeMessageFile(data: MessagesDB): Promise<void>{
+async function writeMessageFile(data: IMessagesDB): Promise<void>{
     try {
         const jsonString = JSON.stringify(data, null, 4);
         await fs.writeFile(FILE_PATH, jsonString, 'utf-8');
@@ -25,8 +25,8 @@ async function writeMessageFile(data: MessagesDB): Promise<void>{
 
 }
 
-export async function saveMessageToHistory(chatId: string, message: Message): Promise<void>{
-    const db = await readMessagesFile();
+export async function saveMessageToHistory(chatId: string, message: IMessage): Promise<void>{
+    const db: IMessagesDB = await readMessagesFile();
     if (!db[chatId]){
         db[chatId] = [];
     }
@@ -34,7 +34,7 @@ export async function saveMessageToHistory(chatId: string, message: Message): Pr
     await writeMessageFile(db);
 }
 
-export async function getChatHistory(chatId: string): Promise<Message[]>{
-    const db = await readMessagesFile();
+export async function getChatHistory(chatId: string): Promise<IMessage[]>{
+    const db: IMessagesDB = await readMessagesFile();
     return db[chatId] || [];
 }

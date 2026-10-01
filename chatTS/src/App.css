@@ -25,12 +25,23 @@ form{
 h2{
   margin-bottom: 20px;
 }
+nav{
+  display: flex;
+}
 .authorisation-container{
   max-width: 400px;
   margin: 100px auto;
   padding: 25px;
   border: 1px solid #ccc;
   border-radius: 12px;
+}
+.autorization-form{
+    color: lightcyan;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
 }
 .error{
   color: red;
@@ -71,4 +82,21 @@ h2{
   border-radius: 12px;
   background: #e4e6eb;
   color: #000;
+}
+.menu-content{
+  display: flex;
+  border: 1px solid silver;
+}
+.menu-content-left{
+  width: 25%;
+  border: 1px solid silver;
+}
+.menu-content-right{
+  width: 75%;
+  border: 1px solid silver;
+}
+.button-chat{
+  border-radius: 15px;
+  background-color: silver;
+  border: 1px solid black;  
 }

@@ -1,11 +1,25 @@
 {
-    "chat_general": [
+    "null": [
         {
-            "id": "msg_1790313706286",
-            "senderId": "usr_1",
+            "id": "msg_1790834427781",
+            "senderId": "1",
             "text": "Борис, а ты что тут делаешь?",
-            "timestamp": 1790313706286,
-            "chatId": "chat_general"
+            "timestamp": 1790834427781,
+            "chatId": null
+        },
+        {
+            "id": "msg_1790835104954",
+            "senderId": "1",
+            "text": "Борис, а ты что тут делаешь?",
+            "timestamp": 1790835104954,
+            "chatId": null
+        },
+        {
+            "id": "msg_1790835106119",
+            "senderId": "1",
+            "text": "Борис, а ты что тут делаешь?",
+            "timestamp": 1790835106119,
+            "chatId": null
         }
     ]
 }

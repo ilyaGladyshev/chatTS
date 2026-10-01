@@ -1,8 +1,11 @@
 import * as http from 'http';
 import {URL} from 'url';
 import { WebSocket, WebSocketServer } from 'ws';
-import {AuthResponse} from "./types/auth";
-import { saveMessageToHistory, getChatHistory } from './dbMessages';
+import {IAuthResponse, IUserProfile, IUserPublic, IUsersDB} from "./types/auth";
+import { saveMessageToHistory} from './dbMessages';
+import { findUserBylogin, createUser, findUserByloginOnly, readUsersFile } from './dbUsers';
+import { getChatHistory, findChatByCurrentAndTarget, createChat } from './dbChats';
+import { IChatData, IChatDB } from './types/chats';
 const PORT = 5000;
 const jsonHeader = { 'Content-Type': 'application/json; charset=utf-8'};
 
@@ -23,48 +26,80 @@ function getRequestBody(req: http.IncomingMessage): Promise<any> {
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const pathname = url.pathname;
-    console.log("Получен новый запрос " + pathname);
     try {
         if (req.method === 'POST' && pathname === '/api/auth/login'){
             const {login, password} = await getRequestBody(req);
-            if (login === 'ilya' && password === '123'){
-                const responseData: AuthResponse = {
-                    status: 'success',
-                    user: {
-                        id: "usr_1",
-                        login: "ilya",
-                        firstName: "Илья",
-                        lastName: "Гладышев"                    
-                    }
-                };
-                res.writeHead(200, jsonHeader);
-                return res.end(JSON.stringify(responseData));
-            } else if (login === 'boris' && password === '123'){
-                const responseData: AuthResponse = {
-                    status: 'success',
-                    user: {
-                        id: "usr_2",
-                        login: "boris",
-                        firstName: "Борис",
-                        lastName: "Бритва"                    
-                    }
-                };
-                res.writeHead(200, jsonHeader);
-                return res.end(JSON.stringify(responseData));
-            } else {
-                const errorData: AuthResponse = {
-                    status: "wrong_password",
-                    error: "Неверное имя пользователя или пароль"
-                };
-                res.writeHead(401, jsonHeader);
-                return res.end(JSON.stringify(errorData));
+             if (!login){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({response: {status: 'not_found', error: "Логин не указан"}}));
             }
-        } else if(req.method === 'GET' && pathname === '/api/chat/history'){
+            if (!password){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({response: {status: 'wrong_password', error: "Пароль не указан"}}));
+            }        
+            const responseData = await findUserBylogin(login, password);
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(responseData));
+        } else if(req.method === 'POST' && pathname === '/api/chats/find_chat'){
+            const {curentUserId, targetUserId} = await getRequestBody(req);
+            const existingChat: IChatData|null = await findChatByCurrentAndTarget(curentUserId, targetUserId);
+            res.writeHead(200, jsonHeader);
+            if (existingChat){
+                return res.end(JSON.stringify({status: 'found', chatId: existingChat.id}));
+            } else{
+               return res.end(JSON.stringify({status: 'not_found'}));                
+            }
+        } else if(req.method === 'POST' && pathname === '/api/chats/create'){
+            console.log(getRequestBody(req));
+            const {participaints} = await getRequestBody(req);
+            console.log(participaints);
+            const chats: IChatData = await createChat(participaints); 
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(Object.keys(chats.id)));                     
+        } else if(req.method === 'GET' && pathname === '/api/chats/history_group'){
+            const chats: IChatDB = await getChatHistory();        
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(Object.keys(chats.chats)));
+        /*} else if(req.method === 'GET' && pathname === '/api/chat/history'){
             const chatId = url.searchParams.get('chatId') || 'chat_general';
             const history = await getChatHistory(chatId);
             res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(history));
-        }else {
+            return res.end(JSON.stringify(history));*/
+        } else if(req.method === 'POST' && pathname === '/api/auth/register'){
+            const { login, firstName, lastName, password} = await getRequestBody(req);
+            if (!login || !firstName || !lastName){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({error: "Заполнены не все обязательные поля"}));
+            }
+            const existingUser: IAuthResponse | undefined = await findUserByloginOnly(login); 
+            if (existingUser?.status != "not_found"){
+                res.writeHead(409, jsonHeader);
+                return res.end(JSON.stringify({error: "Этот логин уже занят"}));
+            } 
+            console.log("start add new user");  
+            const newUser: IUserProfile = await createUser(login, firstName, lastName, password);
+            res.writeHead(201, jsonHeader);
+            return res.end(JSON.stringify({
+                success: true,
+                user: newUser
+            })); 
+        } else if (req.method === 'GET' && pathname === '/api/auth/users')  {
+            const users: IUsersDB = await readUsersFile();
+            const logins: string[] = Object.keys(users.users);                           
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(logins));
+        } else if (req.method === 'GET' && pathname === '/api/auth/usersName')  {
+            const users: IUsersDB = await readUsersFile();
+            const allUsers: IUserProfile[] = Object.values(users.users);
+            const usersPublic: IUserPublic[] = allUsers.map((user) : IUserPublic => {return {
+                id: user.id,
+                userName: user.firstName + " " + user.lastName
+                }
+            });                      
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(usersPublic));
+        }
+        else {
             res.writeHead(404, jsonHeader);
             return res.end(JSON.stringify({error: "Маршрут не существует"}));            
         }
@@ -91,7 +126,7 @@ wss.on('connection', (socket) => {
             }
             else if (packet.type === 'message'){
                 const {text, recipientId, senderId, chatId} = packet;
-                const newMessage ={
+                const newMessage = {
                     id: `msg_${Date.now()}`,
                     senderId,
                     text,
