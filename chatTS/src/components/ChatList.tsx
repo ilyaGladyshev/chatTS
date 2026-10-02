@@ -19,7 +19,7 @@ const ChatList = ({currentUser, onSelectChatId}: IChatProps) => {
             }
         }            
         fetchChats();
-    })
+    }, [])
     return (
         <div>
             {

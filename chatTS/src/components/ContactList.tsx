@@ -27,7 +27,7 @@ const ContactList = ({currentUser, onSelectContact}: IContactProps) => {
         <div>
             {...userList.map((currentValue) => (
                 <button className="button-chat"
-                        onClick={onSelectContact(currentValue)}>
+                        onClick={() => onSelectContact(currentValue)}>
                     {currentValue.userName}
                 </button>
             ))}

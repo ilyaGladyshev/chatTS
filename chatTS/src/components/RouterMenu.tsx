@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Route, Router, Routes } from 'react-router-dom';
 import Authorisation from './Authorisation';
 import Chat from './Chat';
@@ -33,7 +33,7 @@ function RouterMenu(){
             setChatState({mode: 'create', chatId: null, targetUser});            
         }
     }
-
+    useEffect(() =>{}, [currentUser]);
     return (
         <div>
 			<div>

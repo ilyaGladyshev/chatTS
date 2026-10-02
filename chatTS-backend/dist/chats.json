@@ -1,26 +1,8 @@
 {
-    "lastChatId": "3",
+    "lastChatId": "1",
     "chats": {
         "1": {
             "id": "1",
-            "isGroup": false,
-            "participaints": [
-                "1",
-                "2"
-            ],
-            "lastMessage": null
-        },
-        "2": {
-            "id": "2",
-            "isGroup": false,
-            "participaints": [
-                "1",
-                "2"
-            ],
-            "lastMessage": null
-        },
-        "3": {
-            "id": "3",
             "isGroup": false,
             "participaints": [
                 "1",

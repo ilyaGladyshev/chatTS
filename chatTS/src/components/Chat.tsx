@@ -16,6 +16,16 @@ const Chat = ({currentUser, activeChatId, targetUser}: IChatProps) => {
     const socketRef = useRef<WebSocket | null>(null);
     const [currentChatId, setCurrentChatId] = useState<string|null>(null);
     useEffect(() => {
+        const loadMessages = async () => {
+            if (activeChatId){
+                const response = await fetch(`api/chats/history?chatId=${activeChatId}`);
+                const messages = response.json();
+                messages.then((message) => {
+                    message.
+                });
+
+            }
+        }
         const ws = new WebSocket('ws://localhost:5000');
         socketRef.current = ws;
         setCurrentChatId(activeChatId);
@@ -35,10 +45,11 @@ const Chat = ({currentUser, activeChatId, targetUser}: IChatProps) => {
                 ws.close();
             };
         }
-    }, [currentUser.id]);
+    }, []);
 
     const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    let NewChatId: string|null = currentChatId; 
     if (currentChatId === null){
         try {
             const participaints: (string | undefined) [] = [currentUser.id, targetUser?.id];
@@ -47,8 +58,8 @@ const Chat = ({currentUser, activeChatId, targetUser}: IChatProps) => {
                 headers: { 'Content-Type': 'application/json'},
                 body: JSON.stringify({participaints: participaints})
             }); 
-            const newChat: IChatData = await response.json();
-            setCurrentChatId(newChat.id);           
+            NewChatId = await response.json();
+            setCurrentChatId(NewChatId);           
         } catch (error) {
             console.log("Не удалось создать новый чат!");    
         }
@@ -59,7 +70,7 @@ const Chat = ({currentUser, activeChatId, targetUser}: IChatProps) => {
         text: inputText.trim(),
         senderId: currentUser.id,
         recipientId: targetUser?.id,
-        chatId: currentChatId
+        chatId: NewChatId
     }
     socketRef.current.send(JSON.stringify(packet));
     setInputText('');

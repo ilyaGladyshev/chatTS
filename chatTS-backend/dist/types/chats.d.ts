@@ -11,4 +11,7 @@ export interface IChatDB {
         [chatId: string]: IChatData;
     };
 }
+export interface IChatCreateBody {
+    participaints: string[];
+}
 //# sourceMappingURL=chats.d.ts.map

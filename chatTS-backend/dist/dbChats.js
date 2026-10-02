@@ -28,23 +28,25 @@ async function writeChatsFile(data) {
     try {
         const jsonString = JSON.stringify(data, null, 4);
         await promises_1.default.writeFile(FILE_PATH, jsonString, 'utf-8');
-        console.log("Чаты сохранены в файл " + FILE_PATH);
     }
     catch (error) {
         console.log("Не удалось записать чаты в файл: " + error.message);
     }
 }
-async function findChatByCurrentAndTarget(curentUserId, targetUserId) {
+async function findChatByCurrentAndTarget(currentUserId, targetUserId) {
     const db = await readChatsFile();
     if (Object.keys(db.chats).length > 0) {
-        const existingChat = Object.values(db).find(chat => {
-            !chat.isGroup && chat.participaints.includes(curentUserId)
+        const existingChat = Object.values(db.chats).find(chat => {
+            return !chat.isGroup && chat.participaints.includes(currentUserId)
                 && chat.participaints.includes(targetUserId);
         });
+        console.log(existingChat);
         return existingChat;
     }
-    else
-        return null;
+    else {
+        console.log("empty");
+        return undefined;
+    }
 }
 async function createChat(participaints) {
     let isGroup = false;
@@ -60,6 +62,7 @@ async function createChat(participaints) {
     };
     db.lastChatId = id;
     await writeChatsFile(db);
+    console.log(db.chats[id]);
     return db.chats[id];
 }
 async function getChatHistory() {

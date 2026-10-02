@@ -74,8 +74,8 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify(responseData));
         }
         else if (req.method === 'POST' && pathname === '/api/chats/find_chat') {
-            const { curentUserId, targetUserId } = await getRequestBody(req);
-            const existingChat = await (0, dbChats_1.findChatByCurrentAndTarget)(curentUserId, targetUserId);
+            const { currentUserId, targetUserId } = await getRequestBody(req);
+            const existingChat = await (0, dbChats_1.findChatByCurrentAndTarget)(currentUserId, targetUserId);
             res.writeHead(200, jsonHeader);
             if (existingChat) {
                 return res.end(JSON.stringify({ status: 'found', chatId: existingChat.id }));
@@ -88,7 +88,7 @@ const server = http.createServer(async (req, res) => {
             const { participaints } = await getRequestBody(req);
             const chats = await (0, dbChats_1.createChat)(participaints);
             res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(Object.keys(chats.id)));
+            return res.end(JSON.stringify(chats.id));
         }
         else if (req.method === 'GET' && pathname === '/api/chats/history_group') {
             const chats = await (0, dbChats_1.getChatHistory)();

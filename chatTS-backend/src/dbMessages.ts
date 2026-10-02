@@ -34,7 +34,7 @@ export async function saveMessageToHistory(chatId: string, message: IMessage): P
     await writeMessageFile(db);
 }
 
-export async function getChatHistory(chatId: string): Promise<IMessage[]>{
+export async function getChatMessages(chatId: string): Promise< IMessage[]>{
     const db: IMessagesDB = await readMessagesFile();
     return db[chatId] || [];
 }

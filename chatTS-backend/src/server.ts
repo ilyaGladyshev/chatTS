@@ -5,6 +5,7 @@ import {IAuthResponse, IUserProfile, IUserPublic, IUsersDB} from "./types/auth";
 import { saveMessageToHistory} from './dbMessages';
 import { findUserBylogin, createUser, findUserByloginOnly, readUsersFile } from './dbUsers';
 import { getChatHistory, findChatByCurrentAndTarget, createChat } from './dbChats';
+import {getChatMessages} from "./dbMessages";
 import { IChatData, IChatDB } from './types/chats';
 const PORT = 5000;
 const jsonHeader = { 'Content-Type': 'application/json; charset=utf-8'};
@@ -41,8 +42,8 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(responseData));
         } else if(req.method === 'POST' && pathname === '/api/chats/find_chat'){
-            const {curentUserId, targetUserId} = await getRequestBody(req);
-            const existingChat: IChatData|null = await findChatByCurrentAndTarget(curentUserId, targetUserId);
+            const {currentUserId, targetUserId} = await getRequestBody(req);
+            const existingChat: IChatData|undefined = await findChatByCurrentAndTarget(currentUserId, targetUserId);
             res.writeHead(200, jsonHeader);
             if (existingChat){
                 return res.end(JSON.stringify({status: 'found', chatId: existingChat.id}));
@@ -50,21 +51,19 @@ const server = http.createServer(async (req, res) => {
                return res.end(JSON.stringify({status: 'not_found'}));                
             }
         } else if(req.method === 'POST' && pathname === '/api/chats/create'){
-            console.log(getRequestBody(req));
             const {participaints} = await getRequestBody(req);
-            console.log(participaints);
             const chats: IChatData = await createChat(participaints); 
             res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(Object.keys(chats.id)));                     
+            return res.end(JSON.stringify(chats.id);                     
         } else if(req.method === 'GET' && pathname === '/api/chats/history_group'){
             const chats: IChatDB = await getChatHistory();        
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(Object.keys(chats.chats)));
-        /*} else if(req.method === 'GET' && pathname === '/api/chat/history'){
+        } else if(req.method === 'GET' && pathname === '/api/messages/history'){
             const chatId = url.searchParams.get('chatId') || 'chat_general';
-            const history = await getChatHistory(chatId);
+            const history = await getChatMessages(chatId);
             res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(history));*/
+            return res.end(JSON.stringify(history));
         } else if(req.method === 'POST' && pathname === '/api/auth/register'){
             const { login, firstName, lastName, password} = await getRequestBody(req);
             if (!login || !firstName || !lastName){
