@@ -4,7 +4,6 @@ import { IChatData, IChatDB } from './types/chats';
 
 const FILE_PATH = path.join(__dirname, 'chats.json');
 
-
 export async function readChatsFile(): Promise<IChatDB> {
     try {
         const data = await fs.readFile(FILE_PATH, 'utf-8');  
@@ -25,6 +24,15 @@ async function writeChatsFile(data: IChatDB): Promise<void>{
     }
 }
 
+export async function findChatById(id: string){
+    const db: IChatDB = await readChatsFile(); 
+    if (Object.keys(db.chats).length >0){
+        const existingChat: IChatData| undefined = db.chats[id];
+        return existingChat;
+    } else {
+        return undefined;
+    }   
+}
 export async function findChatByCurrentAndTarget(currentUserId: string, targetUserId: string): Promise<IChatData|undefined>{
     const db: IChatDB = await readChatsFile();
     if (Object.keys(db.chats).length >0){
@@ -32,10 +40,8 @@ export async function findChatByCurrentAndTarget(currentUserId: string, targetUs
             return !chat.isGroup && chat.participaints.includes(currentUserId)
             && chat.participaints.includes(targetUserId)
         })
-        console.log(existingChat);
         return existingChat;
     } else {
-        console.log("empty");
         return undefined;
     }
 

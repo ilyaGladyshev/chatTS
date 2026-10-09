@@ -4,31 +4,22 @@ import {useState, useEffect} from "react";
 export interface IContactProps{
     currentUser: IUserProfile;
     onSelectContact: (targetUser: IUserPublic) => void;
+    userList: IUserPublic[];
 }
 
-const ContactList = ({currentUser, onSelectContact}: IContactProps) => {
-    const [userList, setUserList] = useState<IUserPublic[]>([]);
+const ContactList = ({currentUser, onSelectContact, userList}: IContactProps) => {
+    const [filteredUsers, setFilteredUsers] = useState<IUserPublic[]>([]);
     useEffect(() =>{
-        async function fetchUsers() {
-            try {
-                const response = await fetch('/api/auth/usersName');
-                const logins = await response.json();
-                const filteredLogins = logins.filter((item: IUserPublic) => 
-                    item.userName != currentUser.firstName + " " + currentUser.lastName);
-                setUserList(filteredLogins);			
-            } catch (error) {
-                console.error('Не удалось загрузить пользователей', error);	
-            }
-        }
-        fetchUsers();
+        setFilteredUsers(userList.filter(user => {return user.id != currentUser.id}));
     }, []);
     
     return (
         <div>
-            {...userList.map((currentValue) => (
+            {...filteredUsers.map((user) => (
                 <button className="button-chat"
-                        onClick={() => onSelectContact(currentValue)}>
-                    {currentValue.userName}
+                        key = {user.id}
+                        onClick={() => onSelectContact(user)}>
+                    {user.userName}
                 </button>
             ))}
         </div>

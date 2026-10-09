@@ -1,58 +1,80 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {type IUserProfile, type IUserPublic } from '../types/auth';
-import { type IMessage } from '../types/message';
+import {type IUserProfile, type IUserPublic} from '../types/auth';
+import { type IMessage} from '../types/message';
+import { useSocket } from '../SocketContext';
 import '../App.css';
-import type { IChatData } from '../types/chats';
 
 interface IChatProps{
     currentUser: IUserProfile;
     activeChatId: string | null;
-    targetUser: IUserPublic | null;
+    targetUser: (IUserPublic | undefined)[] | null;
+    onNewMessageReceived: (msg: any) => void;
 }
 
-const Chat = ({currentUser, activeChatId, targetUser}: IChatProps) => {
+const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived}: IChatProps) => {
     const [messages, setMessages]  = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
+    const {socket} = useSocket();
     const socketRef = useRef<WebSocket | null>(null);
     const [currentChatId, setCurrentChatId] = useState<string|null>(null);
+    const [chatName, setChatName] = useState<string>('')
+
     useEffect(() => {
         const loadMessages = async () => {
             if (activeChatId){
-                const response = await fetch(`api/chats/history?chatId=${activeChatId}`);
-                const messages = response.json();
-                messages.then((message) => {
-                    message.
-                });
-
+                const response = await fetch(`/api/messages/history?chatId=${activeChatId}`);
+                if (!response.ok){
+                    throw new Error('Не удалось загрузить историю сообщений!');
+                }
+                const responseMessages: IMessage[] = await response.json();
+                setMessages(responseMessages);
             }
         }
-        const ws = new WebSocket('ws://localhost:5000');
-        socketRef.current = ws;
+        loadMessages();
+        if ((targetUser?.length === 1) && (targetUser[0])){
+            setChatName(targetUser[0]?.userName);
+        }
+        if (!socket) return;
+        socketRef.current = socket;
         setCurrentChatId(activeChatId);
-        ws.onopen = () => {
+        socket.onopen = () => {
             console.log("Туннель открыт! Отправляем паспорт...");
-            ws.send(JSON.stringify({
+            socket.send(JSON.stringify({
                 type: 'auth',
                 userId: currentUser.id
             }));
         }
-        ws.onmessage = (event) => {
+        socket.onmessage = (event) => {
             const packet = JSON.parse(event.data);
             if (packet.type === 'new_message'){
-                setMessages((prev) => [...prev, packet.data]);
+                const newMessage = packet.data;
+                setMessages((prev) => [...prev, newMessage]);
+                onNewMessageReceived(newMessage);
             }
             return () => {
-                ws.close();
+                socket.close();
             };
         }
+        const handleReceiveMessage = (e: MessageEvent) => {
+            const parsedData = JSON.parse(e.data);
+            if (parsedData.event === "new_message" && parsedData.data.chatId === activeChatId){
+                setMessages((prev) => [...prev, parsedData.data]);
+            }
+        }
+        socket.addEventListener('message', handleReceiveMessage);
     }, []);
 
     const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!targetUser) return;
+    if (!socketRef) return;
+    const currentSocket = socketRef.current;
+    if (!currentSocket) return;
+    if ((!socket) || (!inputText.trim())) return;
     let NewChatId: string|null = currentChatId; 
     if (currentChatId === null){
         try {
-            const participaints: (string | undefined) [] = [currentUser.id, targetUser?.id];
+            const participaints: (string | undefined) [] = [currentUser.id, targetUser.values.name];
             const response = await fetch('/api/chats/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json'},
@@ -65,20 +87,23 @@ const Chat = ({currentUser, activeChatId, targetUser}: IChatProps) => {
         }
     }
     if (!inputText.trim() || !socketRef.current) return;
-    const packet = {
-        type: 'message',
-        text: inputText.trim(),
-        senderId: currentUser.id,
-        recipientId: targetUser?.id,
-        chatId: NewChatId
-    }
-    socketRef.current.send(JSON.stringify(packet));
+    targetUser.map((target: (IUserPublic | undefined)) => {
+        if (!target) return;
+        const packet = {
+            type: 'message',
+            text: inputText.trim(),
+            senderId: currentUser.id,
+            recipientId: target.id,
+            chatId: NewChatId
+        }
+        currentSocket.send(JSON.stringify(packet));
+    });
     setInputText('');
 }
 
 return (
     <div className='chat-container'>
-        <p>Диалог с: {targetUser?.userName}</p>
+        <p>Диалог с: {chatName}</p>
         <div className='chat-window'>
             {messages.map((msg) => {
                 const isMyMessage = msg.senderId === currentUser.id;

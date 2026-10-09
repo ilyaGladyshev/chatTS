@@ -39,6 +39,7 @@ const ws_1 = require("ws");
 const dbMessages_1 = require("./dbMessages");
 const dbUsers_1 = require("./dbUsers");
 const dbChats_1 = require("./dbChats");
+const dbMessages_2 = require("./dbMessages");
 const PORT = 5000;
 const jsonHeader = { 'Content-Type': 'application/json; charset=utf-8' };
 function getRequestBody(req) {
@@ -73,6 +74,17 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(responseData));
         }
+        else if (req.method === 'POST' && pathname === '/api/chats/find_chat_by_id') {
+            const chatId = url.searchParams.get('chatId') || 'chat_general';
+            const existingChat = await (0, dbChats_1.findChatById)(chatId);
+            res.writeHead(200, jsonHeader);
+            if (existingChat) {
+                return res.end(JSON.stringify(existingChat));
+            }
+            else {
+                return res.end(JSON.stringify({ status: 'not_found' }));
+            }
+        }
         else if (req.method === 'POST' && pathname === '/api/chats/find_chat') {
             const { currentUserId, targetUserId } = await getRequestBody(req);
             const existingChat = await (0, dbChats_1.findChatByCurrentAndTarget)(currentUserId, targetUserId);
@@ -92,13 +104,22 @@ const server = http.createServer(async (req, res) => {
         }
         else if (req.method === 'GET' && pathname === '/api/chats/history_group') {
             const chats = await (0, dbChats_1.getChatHistory)();
+            const chatsWithLastMessage = await Promise.all(Object.values(chats.chats).map(async (chat) => {
+                const history = await (0, dbMessages_2.getChatMessages)(chat.id);
+                const lastMessage = history.length > 0 ? history[history.length - 1] : null;
+                return {
+                    ...chat,
+                    lastMessage: lastMessage
+                };
+            }));
             res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(Object.keys(chats.chats)));
-            /*} else if(req.method === 'GET' && pathname === '/api/chat/history'){
-                const chatId = url.searchParams.get('chatId') || 'chat_general';
-                const history = await getChatHistory(chatId);
-                res.writeHead(200, jsonHeader);
-                return res.end(JSON.stringify(history));*/
+            return res.end(JSON.stringify(chatsWithLastMessage));
+        }
+        else if (req.method === 'GET' && pathname === '/api/messages/history') {
+            const chatId = url.searchParams.get('chatId') || 'chat_general';
+            const history = await (0, dbMessages_2.getChatMessages)(chatId);
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(history));
         }
         else if (req.method === 'POST' && pathname === '/api/auth/register') {
             const { login, firstName, lastName, password } = await getRequestBody(req);
@@ -155,7 +176,6 @@ wss.on('connection', (socket) => {
     socket.on("message", (rawData) => {
         try {
             const packet = JSON.parse(rawData.toString());
-            console.log('Получен новый пакет от клиента: ', packet);
             if (packet.type === 'auth') {
                 currentUserId = packet.userId;
                 clients.set(packet.userId, socket);
@@ -163,6 +183,7 @@ wss.on('connection', (socket) => {
             }
             else if (packet.type === 'message') {
                 const { text, recipientId, senderId, chatId } = packet;
+                console.log(packet);
                 const newMessage = {
                     id: `msg_${Date.now()}`,
                     senderId,
@@ -175,7 +196,10 @@ wss.on('connection', (socket) => {
                     type: 'new_message',
                     data: newMessage
                 });
+                console.log("start broadcast");
                 const recipientSocket = clients.get(recipientId);
+                console.log(recipientId);
+                console.log(recipientSocket?.readyState);
                 if (recipientSocket && recipientSocket.readyState) {
                     recipientSocket.send(messagePacket);
                 }

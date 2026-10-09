@@ -8,6 +8,7 @@ import Settings from './Settings';
 import { type TTabType, type IChatState } from '../types/menu';
 import { type IUserProfile, type IUserPublic } from '../types/auth';
 import { SocketProvider } from '../SocketContext';
+import type { IChatData } from '../types/chats';
 
 function RouterMenu(){
     const [theme, setTheme] = useState('light');
@@ -15,6 +16,8 @@ function RouterMenu(){
 	const [currentUser, setCurrentUser] = useState<IUserProfile | null>(null);
     const [activeChatId, setActiveChatId] = useState<string|null>(null); 
     const [chatState, setChatState] = useState<IChatState | null>(null);
+    const [chatsList, setChatsList] = useState<IChatData[]>([]);
+    const [usersList, setUsersList] = useState<IUserPublic[]>([]);    
     const toggleTheme = () => {
 		setTheme((prevTheme) => (prevTheme === 'light'? 'dark' : 'light'));
 	}
@@ -27,13 +30,53 @@ function RouterMenu(){
             body: JSON.stringify({currentUserId: currentUser.id, targetUserId: targetUser.id})     
         });
         const data = await response.json();
+        const targetUserArray = [targetUser];
         if (data.status === 'found'){
-            setChatState({mode: 'view', chatId: data.chatId, targetUser: null});
+            setChatState({mode: 'view', chatId: data.chatId, targetUser: targetUserArray});
         } else{
-            setChatState({mode: 'create', chatId: null, targetUser});            
+            setChatState({mode: 'create', chatId: null, targetUser: targetUserArray});            
         }
     }
-    useEffect(() =>{}, [currentUser]);
+    const handleChatClick = async (chat: IChatData) => {
+        const filteredParticipaints = chat.participaints.filter(userId => {return userId != currentUser?.id});
+        const targetUsers : (IUserPublic | undefined)[] = filteredParticipaints.map((userId: string) => { 
+            return usersList.find((user) => user.id === userId)
+        });
+        setChatState({mode: 'view', chatId: chat.id, targetUser: targetUsers});        
+    }
+
+    const handleUpdateLastMesage = (chatId: string | null, incommingMessage: any) => {
+        setChatsList((prevChats) => 
+            prevChats.map((chat) => 
+                chat.id === chatId
+                ? {...chat, lastMessage: incommingMessage}
+                : chat
+            )
+        );
+    }
+
+    useEffect(() =>{
+              async function fetchUsers() {
+            try {
+                const response = await fetch('/api/auth/usersName');
+                const users = await response.json();
+                setUsersList(users);			
+            } catch (error) {
+                console.error('Не удалось загрузить пользователей', error);	
+            }
+        }        
+        async function fetchChats() {
+            try {
+                const response = await fetch('/api/chats/history_group');
+                const chatsResponse = await response.json();
+                setChatsList(chatsResponse);			
+            } catch (error) {
+                console.error('Не удалось загрузить чаты', error);	
+            }
+        }            
+        fetchChats();
+        fetchUsers();
+    }, [currentUser]);
     return (
         <div>
 			<div>
@@ -65,23 +108,27 @@ function RouterMenu(){
                         <main className='menu-content'>
                             <div className='menu-content-left'>
                                 {currentTab === 'chats' && <ChatList currentUser={currentUser}
-                                                                    onSelectChatId={(id) => setActiveChatId(id)}></ChatList>}
+                                                                    onSelectChat={(chat) => handleChatClick(chat)}
+                                                                    usersList={usersList}
+                                                                    chatsList={chatsList}></ChatList>}
                                 {currentTab === 'contacts' && <ContactList currentUser={currentUser} 
-                                                                        onSelectContact={(user: IUserPublic) => handleContactClick(user)}></ContactList>}
+                                                                        onSelectContact={(user: IUserPublic) => handleContactClick(user)}
+                                                                        userList={usersList}></ContactList>}
                                 {currentTab === 'settings' && <Settings></Settings>}
                             </div>
                             <div className='menu-content-right'>
                                 {chatState?.mode === 'view' && chatState.chatId && (
                                     <Chat activeChatId={chatState.chatId}
                                           currentUser={currentUser}
-                                          targetUser={null}
-                                          >
+                                          targetUser={chatState.targetUser}
+                                          onNewMessageReceived={(msg) => handleUpdateLastMesage(activeChatId, msg)}>
                                           </Chat>
                                 )}
                                 {chatState?.mode === 'create' && chatState.targetUser && (
                                     <Chat activeChatId={null}
                                           currentUser={currentUser}
-                                          targetUser={chatState.targetUser}></Chat>
+                                          targetUser={chatState.targetUser}
+                                          onNewMessageReceived={(msg) => handleUpdateLastMesage(activeChatId, msg)}></Chat>
                                 )}                          
                             </div>      
                         </main>

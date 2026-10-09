@@ -1,32 +1,32 @@
-import type { IUserProfile } from "../types/auth";
+import type { IUserProfile, IUserPublic } from "../types/auth";
 import {useState, useEffect} from "react";
+import { type IChatData} from "../types/chats"
 
 export interface IChatProps{
     currentUser: IUserProfile;
-    onSelectChatId: (chatId: string) => void;    
+    onSelectChat: (chat: IChatData) => void;  
+    chatsList: IChatData[];
+    usersList: IUserPublic[];  
 }
 
-const ChatList = ({currentUser, onSelectChatId}: IChatProps) => {
-    const [chatsList, setChatsList] = useState<string[]>([]);
+const ChatList = ({currentUser, onSelectChat, chatsList, usersList}: IChatProps) => {
     useEffect(() => {
-        async function fetchChats() {
-            try {
-                const response = await fetch('/api/chats/history_group');
-                const chatsResponse = await response.json();
-                setChatsList(chatsResponse);			
-            } catch (error) {
-                console.error('Не удалось загрузить чаты', error);	
-            }
-        }            
-        fetchChats();
     }, [])
+    const getChatName = (chat: IChatData) => {
+        if (chat.isGroup && chat.name) return chat.name;
+        const companionId = chat.participaints.find(id => id != currentUser.id);
+        const companion = usersList.find(users => users.id === companionId);
+        if (companion) return companion.userName;
+        else return 'Неизвестный собеседник';
+    }
     return (
         <div>
             {
-                ...chatsList.map((currentValue) => (
+                ...chatsList.map((chat) => (
                <button className="button-chat"
-                    onClick={() => onSelectChatId(currentValue)}>
-                        {currentValue}
+                    key = {chat.id}
+                    onClick={() => onSelectChat(chat)}>
+                        {getChatName(chat)}
                 </button>
                 ))    
             }

@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.readChatsFile = readChatsFile;
+exports.findChatById = findChatById;
 exports.findChatByCurrentAndTarget = findChatByCurrentAndTarget;
 exports.createChat = createChat;
 exports.getChatHistory = getChatHistory;
@@ -33,6 +34,16 @@ async function writeChatsFile(data) {
         console.log("Не удалось записать чаты в файл: " + error.message);
     }
 }
+async function findChatById(id) {
+    const db = await readChatsFile();
+    if (Object.keys(db.chats).length > 0) {
+        const existingChat = db.chats[id];
+        return existingChat;
+    }
+    else {
+        return undefined;
+    }
+}
 async function findChatByCurrentAndTarget(currentUserId, targetUserId) {
     const db = await readChatsFile();
     if (Object.keys(db.chats).length > 0) {
@@ -40,11 +51,9 @@ async function findChatByCurrentAndTarget(currentUserId, targetUserId) {
             return !chat.isGroup && chat.participaints.includes(currentUserId)
                 && chat.participaints.includes(targetUserId);
         });
-        console.log(existingChat);
         return existingChat;
     }
     else {
-        console.log("empty");
         return undefined;
     }
 }

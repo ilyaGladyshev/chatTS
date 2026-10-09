@@ -1,39 +1,70 @@
-import React, {useState, useEffect, createContext, useContext} from "react";
-import {io, Socket} from 'socket.io-client';
+import React, {useState, useEffect, createContext, useContext, useRef} from "react";
 
 interface ISocketContext {
-    socket: Socket | null;
+    socket: WebSocket | null;
     isConnected: boolean;
+    sendMessage: (event: string, data: any) => void;
 }
 
 const SocketContext = createContext<ISocketContext>({
     socket: null,
-    isConnected: false
-})
-export const SocketProvider: React.FC<{ userId: string | undefined; children: React.ReactNode}> = ({userId, children}) => {
-    const [socket, setSocket] = useState<Socket | null>(null);
-    const [isConnected, setIsConnected] = useState<boolean>(false);
+    isConnected: false,
+    sendMessage: () => {},
+});
 
+export const SocketProvider: React.FC<{ userId: string | undefined; children: React.ReactNode}> = ({userId, children}) => {
+    const [socket, setSocket] = useState<WebSocket | null>(null);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
+    const wsRef = useRef<WebSocket | null>(null);
     useEffect(() => {
         if (!userId) return;
-        const socketInstance = io('http:localhost:5000', {
-            query: {userId},
-        });
-        socketInstance.on('connect', () =>{
+        if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || 
+            wsRef.current.readyState === WebSocket.CONNECTING)) return;
+        const wsURL = `ws://localhost:5000?userId=${userId}`
+        const wsInstance = new WebSocket(wsURL);
+        wsInstance.onopen = () => {
             setIsConnected(true);
+            const packet = {
+                type: 'auth',
+                userId: userId
+            }
+            wsInstance.send(JSON.stringify(packet));
             console.log('Сокет успешно подключен!');
-        });
-        socketInstance.on('disconnect', () =>{
+        };
+        wsInstance.onclose = () =>{
             setIsConnected(false);
-        });     
-        setSocket(socketInstance);
+        };   
+        wsInstance.onerror = (error) => {
+            console.error('Ошибка сокета: ', error);
+        }  
+        wsRef.current = wsInstance;
+        setSocket(wsInstance);
         return () => {
-            socketInstance.disconnect();
+           if (wsRef.current){
+                console.log('Размонтирование провайдера закрываем сокет');
+                wsRef.current.close();
+                wsRef.current = null;
+           }
         };
     }, [userId]);
 
+    const sendMessage = (event: string, data: any) =>{
+        if (socket && socket.readyState === WebSocket.OPEN){
+            const payload = JSON.stringify({event, data});
+            socket.send(payload);
+        } else if (socket && socket.readyState === WebSocket.CONNECTING){
+            console.warn('Соединение еще устанавливается');
+            const currOnOpen = socket.onopen;
+            socket.onopen = (e) => {
+                if (currOnOpen) currOnOpen.call(socket, e);
+                socket.send(JSON.stringify({event, data}));
+            }
+        } else {
+            console.warn('Попытка отправить сообщение через закрытый сокет');
+        }
+    }
     return (
-        <SocketContext.Provider value={{socket, isConnected}}>
+        <SocketContext.Provider value={{socket, isConnected, sendMessage}}>
             {children}
         </SocketContext.Provider>
     )

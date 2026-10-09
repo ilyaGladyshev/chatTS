@@ -4,6 +4,7 @@ export interface IChatData{
     participaints: string[];
     isGroup: boolean;
     lastMessage: IMessage | null;
+    name?: string;
 }
 
 export interface IChatDB{

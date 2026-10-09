@@ -1,9 +1,10 @@
-import { type Message } from "./message";
+import { type IMessage } from "./message";
 export interface IChatData{
     id: string;
     participaints: string[];
     isGroup: boolean;
-    lastMessage: Message | null;
+    lastMessage: IMessage | null;
+    name?: string;
 }
 
 export interface IChatDB{

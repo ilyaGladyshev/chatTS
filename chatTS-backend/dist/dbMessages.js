@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.saveMessageToHistory = saveMessageToHistory;
-exports.getChatHistory = getChatHistory;
+exports.getChatMessages = getChatMessages;
 const promises_1 = __importDefault(require("fs/promises"));
 const path_1 = __importDefault(require("path"));
 const FILE_PATH = path_1.default.join(__dirname, 'message.json');
@@ -37,7 +37,7 @@ async function saveMessageToHistory(chatId, message) {
     db[chatId].push(message);
     await writeMessageFile(db);
 }
-async function getChatHistory(chatId) {
+async function getChatMessages(chatId) {
     const db = await readMessagesFile();
     return db[chatId] || [];
 }
