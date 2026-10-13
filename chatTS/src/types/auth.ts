@@ -4,6 +4,7 @@ export interface IUserProfile {
     firstName: string;
     lastName: string;
     passwordHash?: string;
+    token?: string;
 }
 export interface IUserPublic {
     id: string;

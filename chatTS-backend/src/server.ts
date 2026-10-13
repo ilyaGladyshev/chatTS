@@ -3,11 +3,13 @@ import {URL} from 'url';
 import { WebSocket, WebSocketServer } from 'ws';
 import {IAuthResponse, IUserProfile, IUserPublic, IUsersDB} from "./types/auth";
 import { saveMessageToHistory} from './dbMessages';
-import { findUserBylogin, createUser, findUserByloginOnly, readUsersFile } from './dbUsers';
+import { findUserBylogin, createUser, findUserByloginOnly, findUserById, readUsersFile } from './dbUsers';
 import { getChatHistory, findChatByCurrentAndTarget, findChatById, createChat } from './dbChats';
 import {getChatMessages} from "./dbMessages";
 import { IChatData, IChatDB } from './types/chats';
 import { IMessage } from './types/message';
+import { verifyToken } from './jwt';
+
 const PORT = 5000;
 const jsonHeader = { 'Content-Type': 'application/json; charset=utf-8'};
 
@@ -29,20 +31,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const pathname = url.pathname;
     try {
-        if (req.method === 'POST' && pathname === '/api/auth/login'){
-            const {login, password} = await getRequestBody(req);
-             if (!login){
-                res.writeHead(400, jsonHeader);
-                return res.end(JSON.stringify({response: {status: 'not_found', error: "Логин не указан"}}));
-            }
-            if (!password){
-                res.writeHead(400, jsonHeader);
-                return res.end(JSON.stringify({response: {status: 'wrong_password', error: "Пароль не указан"}}));
-            }        
-            const responseData = await findUserBylogin(login, password);
-            res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(responseData));
-        }else if(req.method === 'POST' && pathname === '/api/chats/find_chat_by_id'){
+         if(req.method === 'POST' && pathname === '/api/chats/find_chat_by_id'){
             const chatId: string = url.searchParams.get('chatId') || 'chat_general';
             const existingChat: IChatData|undefined = await findChatById(chatId);
             res.writeHead(200, jsonHeader);
@@ -82,7 +71,35 @@ const server = http.createServer(async (req, res) => {
             const history: IMessage[] = await getChatMessages(chatId);
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(history));
-        } else if(req.method === 'POST' && pathname === '/api/auth/register'){
+        } else if (req.method === 'POST' && pathname === '/api/auth/login'){
+            const {login, password} = await getRequestBody(req);
+             if (!login){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({response: {status: 'not_found', error: "Логин не указан"}}));
+            }
+            if (!password){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({response: {status: 'wrong_password', error: "Пароль не указан"}}));
+            }        
+            const responseData = await findUserBylogin(login, password);
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(responseData));
+        } else if (req.method === 'GET' && pathname === '/api/auth/me')  {
+            const authHeader: string = req.headers['authorisation'] as string;
+            const token = authHeader && authHeader.split(' ')[1];
+            const decodedUser = verifyToken(token);
+            if (!decodedUser){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
+            }           
+            const user = await findUserById(decodedUser.id);
+            if (!user){
+                res.writeHead(404, jsonHeader);
+                return res.end(JSON.stringify({ error: "Пользователь не найден"}));
+            }
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify({status: 'success', user}));
+        }  else if(req.method === 'POST' && pathname === '/api/auth/register'){
             const { login, firstName, lastName, password} = await getRequestBody(req);
             if (!login || !firstName || !lastName){
                 res.writeHead(400, jsonHeader);

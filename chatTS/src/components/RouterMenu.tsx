@@ -17,7 +17,8 @@ function RouterMenu(){
     const [activeChatId, setActiveChatId] = useState<string|null>(null); 
     const [chatState, setChatState] = useState<IChatState | null>(null);
     const [chatsList, setChatsList] = useState<IChatData[]>([]);
-    const [usersList, setUsersList] = useState<IUserPublic[]>([]);    
+    const [usersList, setUsersList] = useState<IUserPublic[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);    
     const toggleTheme = () => {
 		setTheme((prevTheme) => (prevTheme === 'light'? 'dark' : 'light'));
 	}
@@ -56,7 +57,7 @@ function RouterMenu(){
     }
 
     useEffect(() =>{
-              async function fetchUsers() {
+        async function fetchUsers() {
             try {
                 const response = await fetch('/api/auth/usersName');
                 const users = await response.json();
@@ -73,10 +74,44 @@ function RouterMenu(){
             } catch (error) {
                 console.error('Не удалось загрузить чаты', error);	
             }
-        }            
+        }    
+		async function checkAutoLogin(){
+			const token = localStorage.getItem('token');
+			if (!token){
+				setLoading(false);
+				return;
+			}
+			try {
+				const response = await fetch('/api/auth/me', {
+					method: 'GET',
+					headers: {
+						'Authorisation': `Brearer ${token}`
+					}
+				});
+				const data = await response.json();
+				if (response.ok && data.status === "success"){
+					setCurrentUser(data.user);
+				} else{
+					localStorage.removeItem('token');
+				}	
+			} catch (error) {
+				console.error('Ошибка авторизации', error);	
+				setCurrentUser(null);
+			} finally{
+				setLoading(false);
+			}
+		}                
         fetchChats();
         fetchUsers();
-    }, [currentUser]);
+        checkAutoLogin();
+    }, []);
+    if (loading){
+        return (
+            <div>
+                Идет загрузка пользлвателя, пожалуйста, подождите...
+            </div>
+        )
+    }
     return (
         <div>
 			<div>
@@ -89,6 +124,16 @@ function RouterMenu(){
                 onLoginSuccess={
                     (currentUser) => {
                         setCurrentUser(currentUser);
+                        try {
+                            if (!currentUser.token) return;
+                            localStorage.setItem('token', currentUser.token);                           
+                        } catch (error) {
+                            console.warn('Локальное хранилище переполнено! Производим очистку...');
+                            localStorage.clear();
+                            if (!currentUser.token) return;
+                            localStorage.setItem('token', currentUser.token);	
+					    }
+
                     }
                 }></Authorisation>
             ) : (

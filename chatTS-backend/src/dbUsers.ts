@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { IUserProfile, IUsersDB, IAuthResponse } from './types/auth';
 import bcryptjs from "bcryptjs";
-
+import { generateToken } from './jwt';
 const FILE_PATH = path.join(__dirname, 'users.json');
 
 async function hashPassword(password: string){
@@ -41,9 +41,10 @@ export async function findUserBylogin(login: string, password: string): Promise<
             const currentHash: string | undefined = user.passwordHash;
             if (currentHash){
                 const isMatch: boolean = await bcryptjs.compare(password, currentHash);
-                if (isMatch) {  
+                if (isMatch) { 
+                    const token = generateToken({ id: user.id}); 
                     return {status: 'success', 
-                            user: {id: user.id, firstName: user.firstName, lastName: user.lastName, login: user.login}}
+                            user: {id: user.id, token: token, firstName: user.firstName, lastName: user.lastName, login: user.login}}
                         };
                 }
             } else{
@@ -59,6 +60,19 @@ export async function findUserByloginOnly(login: string): Promise<IAuthResponse|
     const lowerLogin: string = login.toString().toLowerCase();
     if (usersDB.users){
         const user: IUserProfile = usersDB.users[lowerLogin];
+        if (user){
+            const {passwordHash, ...dataForReturn} = user;
+            return { status:"success", ...dataForReturn};
+        } else return  {status: 'not_found', error: 'Логин не найден'};
+    } else return  {status: 'not_found', error: 'Логин не найден'};
+} 
+
+export async function findUserById(id: string): Promise<IAuthResponse|undefined>{
+    if (!id) return  {status: 'not_found', error: 'ID не найден'};
+    const usersDB: IUsersDB = await readUsersFile();
+    if (usersDB.users){
+        const allUsers = Object.values(usersDB.users);
+        const user: IUserProfile = allUsers.filter(user => {return user.id === id})[0];
         if (user){
             const {passwordHash, ...dataForReturn} = user;
             return { status:"success", ...dataForReturn};
