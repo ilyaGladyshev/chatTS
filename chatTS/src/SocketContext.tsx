@@ -18,9 +18,10 @@ export const SocketProvider: React.FC<{ userId: string | undefined; children: Re
     const wsRef = useRef<WebSocket | null>(null);
     useEffect(() => {
         if (!userId) return;
+        const token = localStorage.getItem('token');
         if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || 
             wsRef.current.readyState === WebSocket.CONNECTING)) return;
-        const wsURL = `ws://localhost:5000?userId=${userId}`
+        const wsURL = `ws://localhost:5000?token=${token}`;
         const wsInstance = new WebSocket(wsURL);
         wsInstance.onopen = () => {
             setIsConnected(true);

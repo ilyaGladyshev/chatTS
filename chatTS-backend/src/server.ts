@@ -9,6 +9,7 @@ import {getChatMessages} from "./dbMessages";
 import { IChatData, IChatDB } from './types/chats';
 import { IMessage } from './types/message';
 import { verifyToken } from './jwt';
+import * as dotenv from 'dotenv';
 
 const PORT = 5000;
 const jsonHeader = { 'Content-Type': 'application/json; charset=utf-8'};
@@ -31,7 +32,9 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const pathname = url.pathname;
     try {
-         if(req.method === 'POST' && pathname === '/api/chats/find_chat_by_id'){
+        dotenv.config(); 
+        const JWT_SECRET = process.env.JWT_SECRET;
+        if(req.method === 'POST' && pathname === '/api/chats/find_chat_by_id'){
             const chatId: string = url.searchParams.get('chatId') || 'chat_general';
             const existingChat: IChatData|undefined = await findChatById(chatId);
             res.writeHead(200, jsonHeader);
@@ -85,7 +88,7 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(responseData));
         } else if (req.method === 'GET' && pathname === '/api/auth/me')  {
-            const authHeader: string = req.headers['authorisation'] as string;
+            const authHeader: string = req.headers['authorization'] as string;
             const token = authHeader && authHeader.split(' ')[1];
             const decodedUser = verifyToken(token);
             if (!decodedUser){
@@ -146,14 +149,23 @@ const server = http.createServer(async (req, res) => {
 const wss = new WebSocketServer({server});
 const clients = new Map<string, WebSocket>;
 
-wss.on('connection', (socket) => {
+wss.on('connection', (socket, req) => {
     console.log('Новое WebSocket соединение установлено!');
-    let currentUserId: string | null = null;
+    const baseUrl = `http://${req.headers.host}`;
+    const url = new URL(req.url || '',  baseUrl);
+    const token = url.searchParams.get('token');
+    const decodedUser = verifyToken(token || '');
+    if (!decodedUser){
+        console.log("Попытка несанкционированного доступа!");
+        socket.close(4001, 'Несанкционированный доступ');
+        return;
+    }    
+    let currentUserId: string | undefined = decodedUser?.id;
     socket.on("message", (rawData) => {
         try {
             const packet =JSON.parse(rawData.toString());
             if (packet.type === 'auth'){
-                currentUserId = packet.userId;
+                currentUserId = currentUserId;
                 clients.set(packet.userId, socket);
                 console.log(`Пользователь ${packet.userId} успешно подключился!`);
             }
