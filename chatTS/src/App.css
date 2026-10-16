@@ -21,12 +21,17 @@ form{
   display: flex;
   gap: 10px;
   margin-bottom: 12px;
+  flex-direction: column;
 }
 h2{
   margin-bottom: 20px;
 }
 nav{
   display: flex;
+}
+label{
+  display: block;
+  margin: 5px 0;
 }
 .authorisation-container{
   max-width: 400px;
@@ -99,4 +104,22 @@ nav{
   border-radius: 15px;
   background-color: silver;
   border: 1px solid black;  
+}
+.create-btn{
+  margin-top: 25px;
+}
+.group-participaints{
+  display: flex;
+  margin-left: 25%;
+  gap: 10px;
+}
+.form-group{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-direction: column;
+    margin-left: 20%;
+    margin-right: 20%;
+    border: aqua solid thick;
+    border-radius: 12px;
 }

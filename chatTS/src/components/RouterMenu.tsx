@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Route, Router, Routes } from 'react-router-dom';
 import Authorisation from './Authorisation';
 import Chat from './Chat';
 import ChatList from './ChatList';
@@ -9,12 +8,13 @@ import { type TTabType, type IChatState } from '../types/menu';
 import { type IUserProfile, type IUserPublic } from '../types/auth';
 import { SocketProvider } from '../SocketContext';
 import type { IChatData } from '../types/chats';
+import CreateGropForm from './CreateGroupForm';
 
 function RouterMenu(){
     const [theme, setTheme] = useState('light');
     const [currentTab, setCurrentTab] = useState<TTabType>('chats'); 
 	const [currentUser, setCurrentUser] = useState<IUserProfile | null>(null);
-    const [activeChatId, setActiveChatId] = useState<string|null>(null); 
+    const [activeChatId] = useState<string|null>(null); 
     const [chatState, setChatState] = useState<IChatState | null>(null);
     const [chatsList, setChatsList] = useState<IChatData[]>([]);
     const [usersList, setUsersList] = useState<IUserPublic[]>([]);
@@ -33,17 +33,21 @@ function RouterMenu(){
         const data = await response.json();
         const targetUserArray = [targetUser];
         if (data.status === 'found'){
-            setChatState({mode: 'view', chatId: data.chatId, targetUser: targetUserArray});
+            setChatState({mode: 'view', chatId: data.chatId, targetUser: targetUserArray, chat: null});
         } else{
-            setChatState({mode: 'create', chatId: null, targetUser: targetUserArray});            
+            setChatState({mode: 'create_private', chatId: null, targetUser: targetUserArray, chat: null});            
         }
     }
+    const handleCreateGroup = () => {
+        setChatState({mode: 'create_group', chatId: null, targetUser: null, chat: null});
+    }
+
     const handleChatClick = async (chat: IChatData) => {
         const filteredParticipaints = chat.participaints.filter(userId => {return userId != currentUser?.id});
         const targetUsers : (IUserPublic | undefined)[] = filteredParticipaints.map((userId: string) => { 
             return usersList.find((user) => user.id === userId)
         });
-        setChatState({mode: 'view', chatId: chat.id, targetUser: targetUsers});        
+        setChatState({mode: 'view', chatId: chat.id, targetUser: targetUsers, chat: chat});        
     }
 
     const handleUpdateLastMesage = (chatId: string | null, incommingMessage: any) => {
@@ -154,6 +158,7 @@ function RouterMenu(){
                             <div className='menu-content-left'>
                                 {currentTab === 'chats' && <ChatList currentUser={currentUser}
                                                                     onSelectChat={(chat) => handleChatClick(chat)}
+                                                                    onStartCreateGroup={handleCreateGroup}
                                                                     usersList={usersList}
                                                                     chatsList={chatsList}></ChatList>}
                                 {currentTab === 'contacts' && <ContactList currentUser={currentUser} 
@@ -166,15 +171,21 @@ function RouterMenu(){
                                     <Chat activeChatId={chatState.chatId}
                                           currentUser={currentUser}
                                           targetUser={chatState.targetUser}
+                                          activeChat={chatState.chat}
                                           onNewMessageReceived={(msg) => handleUpdateLastMesage(activeChatId, msg)}>
                                           </Chat>
                                 )}
-                                {chatState?.mode === 'create' && chatState.targetUser && (
+                                {chatState?.mode === 'create_private' && chatState.targetUser && (
                                     <Chat activeChatId={null}
                                           currentUser={currentUser}
                                           targetUser={chatState.targetUser}
+                                          activeChat={chatState.chat}
                                           onNewMessageReceived={(msg) => handleUpdateLastMesage(activeChatId, msg)}></Chat>
-                                )}                          
+                                )}  
+                                {chatState?.mode === 'create_group' && (
+                                    <CreateGropForm usersList={usersList}
+                                                    onGroupCreated={(newChatId: string)=>setChatState({mode: 'create_group', chatId: newChatId, targetUser: null, chat: null})}
+                                    ></CreateGropForm>)}                        
                             </div>      
                         </main>
                     </SocketProvider>

@@ -1,17 +1,19 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, act} from 'react';
 import {type IUserProfile, type IUserPublic} from '../types/auth';
 import { type IMessage} from '../types/message';
 import { useSocket } from '../SocketContext';
 import '../App.css';
+import { type IChatData } from '../types/chats';
 
 interface IChatProps{
     currentUser: IUserProfile;
     activeChatId: string | null;
     targetUser: (IUserPublic | undefined)[] | null;
     onNewMessageReceived: (msg: any) => void;
+    activeChat: IChatData | undefined | null;
 }
 
-const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived}: IChatProps) => {
+const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, activeChat}: IChatProps) => {
     const [messages, setMessages]  = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
     const {socket} = useSocket();
@@ -33,6 +35,10 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived}: ICh
         loadMessages();
         if ((targetUser?.length === 1) && (targetUser[0])){
             setChatName(targetUser[0]?.userName);
+        } else{
+            if (!activeChat) return;
+            if (!activeChat.name) return;
+            setChatName(activeChat.name);
         }
         if (!socket) return;
         socketRef.current = socket;
@@ -57,12 +63,13 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived}: ICh
         }
         const handleReceiveMessage = (e: MessageEvent) => {
             const parsedData = JSON.parse(e.data);
-            if (parsedData.event === "new_message" && parsedData.data.chatId === activeChatId){
+            if (parsedData.event === "new_message" 
+                && parsedData.data.chatId === activeChatId && parsedData.data.recipientId === currentUser.id){
                 setMessages((prev) => [...prev, parsedData.data]);
             }
         }
         socket.addEventListener('message', handleReceiveMessage);
-    }, []);
+    }, [activeChatId, activeChat]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,11 +81,11 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived}: ICh
     let NewChatId: string|null = currentChatId; 
     if (currentChatId === null){
         try {
-            const participaints: (string | undefined) [] = [currentUser.id, targetUser.values.name];
+            const participaints: (string | undefined) [] = [currentUser.id, targetUser[0]?.id];
             const response = await fetch('/api/chats/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json'},
-                body: JSON.stringify({participaints: participaints})
+                body: JSON.stringify({name: '', isGroup: false, participaints: participaints})
             }); 
             NewChatId = await response.json();
             setCurrentChatId(NewChatId);           

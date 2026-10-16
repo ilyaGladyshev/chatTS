@@ -47,17 +47,25 @@ export async function findChatByCurrentAndTarget(currentUserId: string, targetUs
 
 }
 
-export async function createChat(participaints: string[] ): Promise<IChatData>{
-    let isGroup: boolean = false;
-    if (participaints.length > 2) isGroup = true; 
+export async function createChat(name: string, isGroup: boolean, participaints: string[] ): Promise<IChatData>{
     const db: IChatDB = await readChatsFile();
     const id: string = (Number.parseInt(db.lastChatId) + 1).toString();
+    if (isGroup){
+    db.chats[id] = { 
+        id: id, 
+        isGroup: isGroup,
+        participaints: participaints,
+        name: name,
+        lastMessage: null
+    };  
+    } else {
     db.chats[id] = { 
         id: id, 
         isGroup: isGroup,
         participaints: participaints,
         lastMessage: null
     };  
+    }
     db.lastChatId = id; 
     await writeChatsFile(db);
     console.log(db.chats[id]);

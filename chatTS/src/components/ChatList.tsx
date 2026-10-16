@@ -1,15 +1,16 @@
 import type { IUserProfile, IUserPublic } from "../types/auth";
-import {useState, useEffect} from "react";
+import { useEffect} from "react";
 import { type IChatData} from "../types/chats"
 
 export interface IChatProps{
     currentUser: IUserProfile;
-    onSelectChat: (chat: IChatData) => void;  
+    onSelectChat: (chat: IChatData) => void; 
+    onStartCreateGroup: () => void; 
     chatsList: IChatData[];
     usersList: IUserPublic[];  
 }
 
-const ChatList = ({currentUser, onSelectChat, chatsList, usersList}: IChatProps) => {
+const ChatList = ({currentUser, onSelectChat, onStartCreateGroup, chatsList, usersList}: IChatProps) => {
     useEffect(() => {
     }, [])
     const getChatName = (chat: IChatData) => {
@@ -30,6 +31,9 @@ const ChatList = ({currentUser, onSelectChat, chatsList, usersList}: IChatProps)
                 </button>
                 ))    
             }
+            <button className="create-btn"
+                    onClick={onStartCreateGroup}
+            >Создать групповой чат</button>
         </div>
     );
 }

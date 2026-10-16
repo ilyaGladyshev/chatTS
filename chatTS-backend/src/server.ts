@@ -53,8 +53,8 @@ const server = http.createServer(async (req, res) => {
                return res.end(JSON.stringify({status: 'not_found'}));                
             }
         } else if(req.method === 'POST' && pathname === '/api/chats/create'){
-            const {participaints} = await getRequestBody(req);
-            const chats: IChatData = await createChat(participaints); 
+            const {name, isGroup, participaints} = await getRequestBody(req);
+            const chats: IChatData = await createChat(name, isGroup, participaints); 
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(chats.id));                     
         } else if(req.method === 'GET' && pathname === '/api/chats/history_group'){
@@ -163,7 +163,7 @@ wss.on('connection', (socket, req) => {
     let currentUserId: string | undefined = decodedUser?.id;
     socket.on("message", (rawData) => {
         try {
-            const packet =JSON.parse(rawData.toString());
+            const packet = JSON.parse(rawData.toString());
             if (packet.type === 'auth'){
                 currentUserId = currentUserId;
                 clients.set(packet.userId, socket);
@@ -177,17 +177,15 @@ wss.on('connection', (socket, req) => {
                     senderId,
                     text,
                     timestamp: Date.now(),
-                    chatId                   
+                    chatId,
+                    recipientId                   
                 }
                 saveMessageToHistory(chatId, newMessage);
                 const messagePacket = JSON.stringify({
                     type: 'new_message',
                     data: newMessage
                 });
-                console.log("start broadcast");
                 const recipientSocket = clients.get(recipientId);
-                console.log(recipientId);               
-                console.log(recipientSocket?.readyState);
                 if (recipientSocket && recipientSocket.readyState){
                     recipientSocket.send(messagePacket);
                 }
