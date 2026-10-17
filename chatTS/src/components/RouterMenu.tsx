@@ -24,10 +24,14 @@ function RouterMenu(){
 	}
 
     const handleContactClick = async (targetUser: IUserPublic) => {
+        const token = localStorage.getItem('token');
         if (!currentUser) return;
         const response = await fetch('/api/chats/find_chat', {
             method: 'POST',
-            headers: {'Content-Type': 'application'}, 
+			headers: {
+                'Content-Type': 'application',
+                'Authorization': `Brearer ${token}`
+            },
             body: JSON.stringify({currentUserId: currentUser.id, targetUserId: targetUser.id})     
         });
         const data = await response.json();
@@ -43,7 +47,7 @@ function RouterMenu(){
     }
 
     const handleChatClick = async (chat: IChatData) => {
-        const filteredParticipaints = chat.participaints.filter(userId => {return userId != currentUser?.id});
+        const filteredParticipaints = chat.participants.filter(userId => {return userId != currentUser?.id});
         const targetUsers : (IUserPublic | undefined)[] = filteredParticipaints.map((userId: string) => { 
             return usersList.find((user) => user.id === userId)
         });
@@ -72,7 +76,11 @@ function RouterMenu(){
         }        
         async function fetchChats() {
             try {
-                const response = await fetch('/api/chats/history_group');
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/chats/history_group',{
+                    'method':'GET',
+                    'headers':{'Authorization': `Brearer ${token}`}
+                } );
                 const chatsResponse = await response.json();
                 setChatsList(chatsResponse);			
             } catch (error) {

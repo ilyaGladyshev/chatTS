@@ -37,8 +37,8 @@ export async function findChatByCurrentAndTarget(currentUserId: string, targetUs
     const db: IChatDB = await readChatsFile();
     if (Object.keys(db.chats).length >0){
             const existingChat: IChatData| undefined = Object.values(db.chats).find(chat => {
-            return !chat.isGroup && chat.participaints.includes(currentUserId)
-            && chat.participaints.includes(targetUserId)
+            return !chat.isGroup && chat.participants.includes(currentUserId)
+            && chat.participants.includes(targetUserId)
         })
         return existingChat;
     } else {
@@ -47,14 +47,14 @@ export async function findChatByCurrentAndTarget(currentUserId: string, targetUs
 
 }
 
-export async function createChat(name: string, isGroup: boolean, participaints: string[] ): Promise<IChatData>{
+export async function createChat(name: string, isGroup: boolean, participants: string[] ): Promise<IChatData>{
     const db: IChatDB = await readChatsFile();
     const id: string = (Number.parseInt(db.lastChatId) + 1).toString();
     if (isGroup){
     db.chats[id] = { 
         id: id, 
         isGroup: isGroup,
-        participaints: participaints,
+        participants: participants,
         name: name,
         lastMessage: null
     };  
@@ -62,7 +62,7 @@ export async function createChat(name: string, isGroup: boolean, participaints: 
     db.chats[id] = { 
         id: id, 
         isGroup: isGroup,
-        participaints: participaints,
+        participants: participants,
         lastMessage: null
     };  
     }

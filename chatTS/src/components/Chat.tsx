@@ -23,8 +23,14 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
 
     useEffect(() => {
         const loadMessages = async () => {
+            const token = localStorage.getItem('token');
             if (activeChatId){
-                const response = await fetch(`/api/messages/history?chatId=${activeChatId}`);
+                const response = await fetch(`/api/messages/history?chatId=${activeChatId}`,{
+                    'method': 'GET',
+                    'headers':{
+                        'Authorization': `Brearer ${token}`
+                    }
+                });
                 if (!response.ok){
                     throw new Error('Не удалось загрузить историю сообщений!');
                 }
@@ -73,6 +79,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
 
     const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
     if (!targetUser) return;
     if (!socketRef) return;
     const currentSocket = socketRef.current;
@@ -84,7 +91,10 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
             const participaints: (string | undefined) [] = [currentUser.id, targetUser[0]?.id];
             const response = await fetch('/api/chats/create', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json'},
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Brearer ${token}`
+                },
                 body: JSON.stringify({name: '', isGroup: false, participaints: participaints})
             }); 
             NewChatId = await response.json();

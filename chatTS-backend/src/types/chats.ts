@@ -1,7 +1,7 @@
 import { type IMessage } from "./message";
 export interface IChatData{
     id: string;
-    participaints: string[];
+    participants: string[];
     isGroup: boolean;
     lastMessage: IMessage | null;
     name?: string;
@@ -13,5 +13,5 @@ export interface IChatDB{
 }
 
 export interface IChatCreateBody{
-    participaints: string[];
+    participants: string[];
 }

@@ -18,9 +18,13 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
 
     const handleSubmit = async () => {
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch('/api/chats/create',{
                 method: 'POST',
-				headers: {'Content-Type': '/application/json'},
+				headers: {
+                    'Content-Type': '/application/json',
+                    'Authorization': `Brearer ${token}`
+                },
                 body:JSON.stringify({
                     name: groupName,
                     isGroup: true,

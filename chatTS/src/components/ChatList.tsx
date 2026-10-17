@@ -15,7 +15,7 @@ const ChatList = ({currentUser, onSelectChat, onStartCreateGroup, chatsList, use
     }, [])
     const getChatName = (chat: IChatData) => {
         if (chat.isGroup && chat.name) return chat.name;
-        const companionId = chat.participaints.find(id => id != currentUser.id);
+        const companionId = chat.participants.find(id => id != currentUser.id);
         const companion = usersList.find(users => users.id === companionId);
         if (companion) return companion.userName;
         else return 'Неизвестный собеседник';
@@ -24,11 +24,12 @@ const ChatList = ({currentUser, onSelectChat, onStartCreateGroup, chatsList, use
         <div>
             {
                 ...chatsList.map((chat) => (
-               <button className="button-chat"
-                    key = {chat.id}
-                    onClick={() => onSelectChat(chat)}>
-                        {getChatName(chat)}
-                </button>
+                    chat.participants.includes(currentUser.id) && 
+                    <button className="button-chat"
+                            key = {chat.id}
+                            onClick={() => onSelectChat(chat)}>
+                                {getChatName(chat)}
+                    </button>
                 ))    
             }
             <button className="create-btn"

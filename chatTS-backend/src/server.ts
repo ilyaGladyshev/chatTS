@@ -13,6 +13,7 @@ import * as dotenv from 'dotenv';
 
 const PORT = 5000;
 const jsonHeader = { 'Content-Type': 'application/json; charset=utf-8'};
+dotenv.config(); 
 
 function getRequestBody(req: http.IncomingMessage): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -32,7 +33,6 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const pathname = url.pathname;
     try {
-        dotenv.config(); 
         const JWT_SECRET = process.env.JWT_SECRET;
         if(req.method === 'POST' && pathname === '/api/chats/find_chat_by_id'){
             const chatId: string = url.searchParams.get('chatId') || 'chat_general';
@@ -44,6 +44,13 @@ const server = http.createServer(async (req, res) => {
                return res.end(JSON.stringify({status: 'not_found'}));                
             }
         } else if(req.method === 'POST' && pathname === '/api/chats/find_chat'){
+            const authHeader: string = req.headers['authorization'] as string;
+            const token = authHeader && authHeader.split(' ')[1];
+            const decodedUser = verifyToken(token);
+            if (!decodedUser){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
+            }              
             const {currentUserId, targetUserId} = await getRequestBody(req);
             const existingChat: IChatData|undefined = await findChatByCurrentAndTarget(currentUserId, targetUserId);
             res.writeHead(200, jsonHeader);
@@ -53,11 +60,25 @@ const server = http.createServer(async (req, res) => {
                return res.end(JSON.stringify({status: 'not_found'}));                
             }
         } else if(req.method === 'POST' && pathname === '/api/chats/create'){
-            const {name, isGroup, participaints} = await getRequestBody(req);
-            const chats: IChatData = await createChat(name, isGroup, participaints); 
+            const authHeader: string = req.headers['authorization'] as string;
+            const token = authHeader && authHeader.split(' ')[1];
+            const decodedUser = verifyToken(token);
+            if (!decodedUser){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
+            }              
+            const {name, isGroup, participants} = await getRequestBody(req);
+            const chats: IChatData = await createChat(name, isGroup, participants); 
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(chats.id));                     
         } else if(req.method === 'GET' && pathname === '/api/chats/history_group'){
+            const authHeader: string = req.headers['authorization'] as string;
+            const token = authHeader && authHeader.split(' ')[1];
+            const decodedUser = verifyToken(token);
+            if (!decodedUser){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
+            }             
             const chats: IChatDB = await getChatHistory(); 
             const chatsWithLastMessage = await Promise.all(Object.values(chats.chats).map(async (chat: IChatData) => {
                 const history: IMessage[] = await getChatMessages(chat.id);
@@ -70,6 +91,13 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(chatsWithLastMessage));
         } else if(req.method === 'GET' && pathname === '/api/messages/history'){
+            const authHeader: string = req.headers['authorization'] as string;
+            const token = authHeader && authHeader.split(' ')[1];
+            const decodedUser = verifyToken(token);
+            if (!decodedUser){
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
+            }              
             const chatId: string = url.searchParams.get('chatId') || 'chat_general';
             const history: IMessage[] = await getChatMessages(chatId);
             res.writeHead(200, jsonHeader);
@@ -166,8 +194,8 @@ wss.on('connection', (socket, req) => {
             const packet = JSON.parse(rawData.toString());
             if (packet.type === 'auth'){
                 currentUserId = currentUserId;
-                clients.set(packet.userId, socket);
-                console.log(`Пользователь ${packet.userId} успешно подключился!`);
+                clients.set(decodedUser.id, socket);
+                console.log(`Пользователь ${decodedUser.id} успешно подключился!`);
             }
             else if (packet.type === 'message'){
                 const {text, recipientId, senderId, chatId} = packet;
