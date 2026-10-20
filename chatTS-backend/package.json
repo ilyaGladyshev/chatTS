@@ -3,6 +3,7 @@
     "bcryptjs": "^3.0.3",
     "crypto": "^1.0.1",
     "dotenv": "^18.0.7",
+    "mysql2": "^3.24.6",
     "ws": "^8.21.3"
   },
   "devDependencies": {
@@ -18,8 +19,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node src/dist/server_mysql.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server_mysql.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

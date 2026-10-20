@@ -1,4 +1,4 @@
-import { type IUserProfile, type IUserPublic } from '../types/auth';
+import { type IUserPublic } from '../types/auth';
 import { useState } from 'react';
 interface IGroupCreateFromProps{
     usersList: IUserPublic[];
@@ -16,19 +16,21 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
         )
     }
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
         try {
             const token = localStorage.getItem('token');
+            const participants = Array.from(selectedUsersId.values());
             const response = await fetch('/api/chats/create',{
                 method: 'POST',
 				headers: {
-                    'Content-Type': '/application/json',
-                    'Authorization': `Brearer ${token}`
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body:JSON.stringify({
                     name: groupName,
                     isGroup: true,
-                    participaints: selectedUsersId
+                    participants: participants 
                 })
             });
 			const newChatId = await response.json();
@@ -53,7 +55,7 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
                         onChange={(e) => setGroupName(e.target.value)}/>
                 <h4>Выберите участников группы:</h4>
                 {usersList.map((user: IUserPublic) => (
-                    <div className='group-participaints'>
+                    <div className='group-participants'>
                         <label key={user.id}>
                             <input type="checkbox"
                                 checked={selectedUsersId.includes(user.id)}

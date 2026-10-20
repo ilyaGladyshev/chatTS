@@ -141,7 +141,6 @@ const server = http.createServer(async (req, res) => {
                 res.writeHead(409, jsonHeader);
                 return res.end(JSON.stringify({error: "Этот логин уже занят"}));
             } 
-            console.log("start add new user");  
             const newUser: IUserProfile = await createUser(login, firstName, lastName, password);
             res.writeHead(201, jsonHeader);
             return res.end(JSON.stringify({

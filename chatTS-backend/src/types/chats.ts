@@ -3,7 +3,7 @@ export interface IChatData{
     id: string;
     participants: string[];
     isGroup: boolean;
-    lastMessage: IMessage | null;
+    lastMessage?: IMessage | null;
     name?: string;
 }
 

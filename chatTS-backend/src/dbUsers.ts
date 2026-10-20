@@ -80,7 +80,7 @@ export async function findUserById(id: string): Promise<IAuthResponse|undefined>
     } else return  {status: 'not_found', error: 'Логин не найден'};
 } 
 
-export async function createUser(login: string, firstName: string, lastName: string, password: string){
+export async function createUser(login: string, firstName: string, lastName: string, password: string): Promise<IUserProfile>{
 		const usersDB: IUsersDB = await readUsersFile();
         const lowerLogin: string = login.toLowerCase().trim();
 		usersDB.users[lowerLogin] = {

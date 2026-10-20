@@ -28,7 +28,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
                 const response = await fetch(`/api/messages/history?chatId=${activeChatId}`,{
                     'method': 'GET',
                     'headers':{
-                        'Authorization': `Brearer ${token}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 if (!response.ok){
@@ -88,14 +88,14 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
     let NewChatId: string|null = currentChatId; 
     if (currentChatId === null){
         try {
-            const participaints: (string | undefined) [] = [currentUser.id, targetUser[0]?.id];
+            const participants: (string | undefined) [] = [currentUser.id, targetUser[0]?.id];
             const response = await fetch('/api/chats/create', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Brearer ${token}`
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({name: '', isGroup: false, participaints: participaints})
+                body: JSON.stringify({name: '', isGroup: false, participants: participants})
             }); 
             NewChatId = await response.json();
             setCurrentChatId(NewChatId);           

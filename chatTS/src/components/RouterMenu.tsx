@@ -30,7 +30,7 @@ function RouterMenu(){
             method: 'POST',
 			headers: {
                 'Content-Type': 'application',
-                'Authorization': `Brearer ${token}`
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({currentUserId: currentUser.id, targetUserId: targetUser.id})     
         });
@@ -47,8 +47,8 @@ function RouterMenu(){
     }
 
     const handleChatClick = async (chat: IChatData) => {
-        const filteredParticipaints = chat.participants.filter(userId => {return userId != currentUser?.id});
-        const targetUsers : (IUserPublic | undefined)[] = filteredParticipaints.map((userId: string) => { 
+        const filteredParticipants = chat.participants.filter(userId => {return userId != currentUser?.id});
+        const targetUsers : (IUserPublic | undefined)[] = filteredParticipants.map((userId: string) => { 
             return usersList.find((user) => user.id === userId)
         });
         setChatState({mode: 'view', chatId: chat.id, targetUser: targetUsers, chat: chat});        
@@ -79,7 +79,7 @@ function RouterMenu(){
                 const token = localStorage.getItem('token');
                 const response = await fetch('/api/chats/history_group',{
                     'method':'GET',
-                    'headers':{'Authorization': `Brearer ${token}`}
+                    'headers':{'Authorization': `Bearer ${token}`}
                 } );
                 const chatsResponse = await response.json();
                 setChatsList(chatsResponse);			
@@ -97,7 +97,7 @@ function RouterMenu(){
 				const response = await fetch('/api/auth/me', {
 					method: 'GET',
 					headers: {
-						'Authorization': `Brearer ${token}`
+						'Authorization': `Bearer ${token}`
 					}
 				});
 				const data = await response.json();

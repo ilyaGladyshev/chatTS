@@ -1,4 +1,5 @@
-export interface IUserProfile {
+
+export interface IUserProfile{
     id: string;
     login: string;
     firstName: string;
@@ -9,6 +10,7 @@ export interface IUserProfile {
 export interface IUserPublic {
     id: string;
     userName: string;
+    login? : string
 }
  export interface IAuthResponse {
     status: 'success' | 'wrong_password' | 'not_found' ;
