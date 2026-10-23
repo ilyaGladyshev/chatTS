@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, act} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {type IUserProfile, type IUserPublic} from '../types/auth';
 import { type IMessage} from '../types/message';
 import { useSocket } from '../SocketContext';
@@ -12,7 +12,6 @@ interface IChatProps{
     onNewMessageReceived: (msg: any) => void;
     activeChat: IChatData | undefined | null;
 }
-
 const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, activeChat}: IChatProps) => {
     const [messages, setMessages]  = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
@@ -20,24 +19,30 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
     const socketRef = useRef<WebSocket | null>(null);
     const [currentChatId, setCurrentChatId] = useState<string|null>(null);
     const [chatName, setChatName] = useState<string>('')
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const scrollToBottom = () => {
+        if (!messagesEndRef.current) return;
+        messagesEndRef.current.scrollIntoView({behavior: 'smooth'});
+    }
     useEffect(() => {
         const loadMessages = async () => {
             const token = localStorage.getItem('token');
-            if (activeChatId){
-                const response = await fetch(`/api/messages/history?chatId=${activeChatId}`,{
-                    'method': 'GET',
-                    'headers':{
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok){
-                    throw new Error('Не удалось загрузить историю сообщений!');
+            if (!activeChatId) return;
+            const response = await fetch(`/api/messages/history?chatId=${activeChatId}`,{
+                'method': 'GET',
+                'headers':{
+                    'Authorization': `Bearer ${token}`
                 }
-                const responseMessages: IMessage[] = await response.json();
-                setMessages(responseMessages);
+            });
+            if (!response.ok){
+                throw new Error('Не удалось загрузить историю сообщений!');
             }
-        }
+            const responseMessages: IMessage[] = await response.json();
+            responseMessages.map(m => m.status = 'delivered');
+            setMessages(responseMessages);          
+        };
+
         loadMessages();
         if ((targetUser?.length === 1) && (targetUser[0])){
             setChatName(targetUser[0]?.userName);
@@ -46,90 +51,119 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
             if (!activeChat.name) return;
             setChatName(activeChat.name);
         }
-        if (!socket) return;
-        socketRef.current = socket;
-        setCurrentChatId(activeChatId);
-        socket.onopen = () => {
-            console.log("Туннель открыт! Отправляем паспорт...");
-            socket.send(JSON.stringify({
-                type: 'auth',
-                userId: currentUser.id
-            }));
-        }
-        socket.onmessage = (event) => {
-            const packet = JSON.parse(event.data);
-            if (packet.type === 'new_message'){
-                const newMessage = packet.data;
-                setMessages((prev) => [...prev, newMessage]);
-                onNewMessageReceived(newMessage);
+    },[activeChatId, activeChat, targetUser]);
+
+    useEffect(() => {
+        try {
+            if (!socket || !activeChatId || !currentUser.id) return;
+            socketRef.current = socket;
+            setCurrentChatId(activeChatId);
+            const handleReceiveMessage = (e: MessageEvent) => {
+                let data: any;
+                try {
+                    data = JSON.parse(e.data);                    
+                } catch (error) {
+                    return;    
+                }
+                if (data.type != "new_message") return;
+                const incomingMsg = data.data as IMessage;
+                if (data.data.chatId != activeChatId) return;   
+                setMessages((prev) => {
+                    const updated = [...prev];
+                    const pendingIndex = updated.findIndex(m => m.status === 'pending' && m.senderId === incomingMsg.senderId && m.text === incomingMsg.text);
+                    if (pendingIndex !== -1) {
+                        updated[pendingIndex] = {
+                        ...updated[pendingIndex],
+                        id: incomingMsg.id,
+                        status: 'delivered',
+                        };
+                    } else {
+                        if (!updated.some(m => m.id === incomingMsg.id)) {
+                        updated.push(incomingMsg);
+                        }
+                    }
+                    return updated;
+                });                 
+                onNewMessageReceived(data);
+                scrollToBottom();            
             }
+            socket.addEventListener('message', handleReceiveMessage);
             return () => {
-                socket.close();
-            };
+                socket.removeEventListener('message', handleReceiveMessage);
+            };            
+        } catch (error) {
+            
         }
-        const handleReceiveMessage = (e: MessageEvent) => {
-            const parsedData = JSON.parse(e.data);
-            if (parsedData.event === "new_message" 
-                && parsedData.data.chatId === activeChatId && parsedData.data.recipientId === currentUser.id){
-                setMessages((prev) => [...prev, parsedData.data]);
-            }
-        }
-        socket.addEventListener('message', handleReceiveMessage);
-    }, [activeChatId, activeChat]);
+
+    }, [socket, activeChatId, currentUser.id, onNewMessageReceived]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    if (!targetUser) return;
-    if (!socketRef) return;
-    const currentSocket = socketRef.current;
-    if (!currentSocket) return;
-    if ((!socket) || (!inputText.trim())) return;
-    let NewChatId: string|null = currentChatId; 
-    if (currentChatId === null){
-        try {
-            const participants: (string | undefined) [] = [currentUser.id, targetUser[0]?.id];
-            const response = await fetch('/api/chats/create', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({name: '', isGroup: false, participants: participants})
-            }); 
-            NewChatId = await response.json();
-            setCurrentChatId(NewChatId);           
-        } catch (error) {
-            console.log("Не удалось создать новый чат!");    
+        e.preventDefault();
+        if (!currentChatId) return;
+        const tempId = `pending_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const newPendingMessage: IMessage = {
+            id: tempId,
+            senderId: currentUser.id,
+            text: inputText.trim(),
+            timestamp: Date.now(),
+            chatId: currentChatId,
+            status: 'pending'
+        };
+        setMessages((prev) => [...prev, newPendingMessage]);
+        const token = localStorage.getItem('token');
+        if (!targetUser) return;
+        if (!socketRef) return;
+        const currentSocket = socketRef.current;
+        if (!currentSocket) return;
+        if ((!socket) || (!inputText.trim())) return;
+        let newChatId = currentChatId;
+        if (!newChatId){
+            try {
+                const participants: (string | undefined) [] = [currentUser.id, targetUser[0]?.id];
+                const response = await fetch('/api/chats/create', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({name: '', isGroup: false, participants: participants})
+                }); 
+                const newChat = await response.json();
+                newChatId = newChat.id;
+                setCurrentChatId(newChatId);           
+            } catch (error) {
+                console.log("Не удалось создать новый чат!");    
+            }
         }
-    }
-    if (!inputText.trim() || !socketRef.current) return;
-    targetUser.map((target: (IUserPublic | undefined)) => {
-        if (!target) return;
+        if (!inputText.trim() || !socketRef.current) return;
+        if (!newChatId) return;
         const packet = {
             type: 'message',
             text: inputText.trim(),
             senderId: currentUser.id,
-            recipientId: target.id,
-            chatId: NewChatId
+            chatId: newChatId
         }
         currentSocket.send(JSON.stringify(packet));
-    });
-    setInputText('');
-}
+        setInputText('');
+    }   
 
 return (
     <div className='chat-container'>
         <p>Диалог с: {chatName}</p>
         <div className='chat-window'>
-            {messages.map((msg) => {
+            {messages.map((msg: IMessage) => {
                 const isMyMessage = msg.senderId === currentUser.id;
+                const status = msg.status;
                 return (
-                    <div key={msg.id} className={isMyMessage ? 'chat-item_right':  'chat-item_left'}>
-                        <span className={isMyMessage ? 'chat-textbox-my':  'chat-textbox-other'}>{msg.text}</span>
-                    </div>
+                    isMyMessage ? <div key={msg.id} className={status === 'pending' ? 'chat-item_right_pending':  'chat-item_right_delivered'}>
+                        <span className={'chat-textbox-my'}>{msg.text}</span>
+                    </div> 
+                    : <div key={msg.id} className={'chat-item_left'}>
+                        <span className={'chat-textbox-other'}>{msg.text}</span>
+                    </div> 
                 )
             })}
+            <div ref={messagesEndRef} ></div>
         </div>
         <form onSubmit={handleSendMessage}>
             <input

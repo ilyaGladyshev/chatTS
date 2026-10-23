@@ -1,8 +1,9 @@
 import { type IUserPublic } from '../types/auth';
 import { useState } from 'react';
+import type { IChatData } from '../types/chats';
 interface IGroupCreateFromProps{
     usersList: IUserPublic[];
-    onGroupCreated: (newChatId: string) => void;
+    onGroupCreated: (newChat: IChatData) => void;
 }
 
 const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
@@ -33,10 +34,10 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
                     participants: participants 
                 })
             });
-			const newChatId = await response.json();
-			if (response.ok && newChatId){
+			const newChat = await response.json();
+			if (response.ok && newChat) {
 				console.log('Создан новый чат!');
-				onGroupCreated(newChatId);
+				onGroupCreated(newChat);
 			}	            
         } catch (error) {
             alert(error);
@@ -56,8 +57,9 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
                 <h4>Выберите участников группы:</h4>
                 {usersList.map((user: IUserPublic) => (
                     <div className='group-participants'>
-                        <label key={user.id}>
-                            <input type="checkbox"
+                        <label>
+                            <input key={user.id}
+                                type="checkbox"
                                 checked={selectedUsersId.includes(user.id)}
                                 onClick={() => handleCheckBoxClick(user.id)}/>
                         </label>

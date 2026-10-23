@@ -11,7 +11,7 @@ const ContactList = ({currentUser, onSelectContact, userList}: IContactProps) =>
     const [filteredUsers, setFilteredUsers] = useState<IUserPublic[]>([]);
     useEffect(() =>{
         setFilteredUsers(userList.filter(user => {return user.id != currentUser.id}));
-    }, []);
+    }, [currentUser]);
     
     return (
         <div>

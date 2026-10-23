@@ -14,8 +14,8 @@ function compressParticipats(rows: RowDataPacket[]){
             });
         }
         const chat = chatsMap.get(row.id);
-        if (row.id_user != null) {
-            chat?.participants.push(row.id_user);
+        if (row.userId != null) {
+            chat?.participants.push(row.userId.toString());
         }
         return chatsMap;
     });
@@ -25,20 +25,42 @@ function compressParticipats(rows: RowDataPacket[]){
 export async function readAllChats(): Promise<IChatData[]> {
     try {
         const [rows, fields] = await pool.execute<(RowDataPacket)[]>("SELECT c.id, is_group, name," + 
-            "p.id_user from chats c " +
+            "p.userId from chats c " +
             "inner join participants p" +
-            " on c.id = p.id_chat");
+            " on c.id = p.chatId");
         return compressParticipats(rows);        
     } catch (error) {
-        console.log('readAllChats error: ', error);
+        console.error('readAllChats error: ', error);
         throw error;        
     }
 }
 
 export async function findChatById(id: string): Promise<IChatData | undefined>{
-    try {    const [rows, fields] = await pool.execute<(IChatData & RowDataPacket)[]>("SELECT id, is_group, name  from chats ");
+    try {    const [rows, fields] = await pool.execute<(RowDataPacket)[]>("SELECT id, is_group, name  from chats " +
+        "where id = :id", {id: id}
+    );
         if (rows.length > 0){
-            return rows[0];
+            return rows[0] as IChatData;
+        } else {
+            return undefined;
+        }               
+    } catch (error) {
+        console.error('findChatByid error: ', error);
+        throw error;
+    }
+}
+
+export async function getAllParticipantsByChatById(id: string): Promise<string[] | undefined>{
+    try {    const [rows, fields] = await pool.execute<(RowDataPacket)[]>("SELECT p.userId  from chats c " +
+        "inner join participants p on p.chatId = c.id " + 
+        "where c.id = :id", {id: id}
+    );
+    if (rows.length > 0){
+            const result: string[] = [];
+            rows.map(row => {
+                result.push(row.userId);
+            });
+            return result;
         } else {
             return undefined;
         }               
@@ -51,12 +73,12 @@ export async function findChatById(id: string): Promise<IChatData | undefined>{
 export async function findChatByCurrentAndTarget(currentUserId: string, targetUserId: string): Promise<IChatData|undefined>{
     try {
         const [rows, fields] = await pool.execute<(RowDataPacket)[]>("SELECT c.id, is_group, name," +
-            " id_user  from chats c inner join participants p1" +
-            " on c.id = p1.id_chat where p1.id_user = :currentUserId AND c.is_group = :is_group " + 
-            " and EXISTS(SELECT * FROM participants p2 where p2.id_chat = p1.id_chat and p2.id_user = :targetUserId)", 
-                {currentUserId: currentUserId,
+            " userId  from chats c inner join participants p1" +
+            " on c.id = p1.chatId where p1.userId = :currentUserId AND c.is_group = :is_group " + 
+            " and EXISTS(SELECT * FROM participants p2 where p2.chatId = p1.chatId and p2.userId = :targetUserId)", 
+                {currentUserId: currentUserId.toString(),
                 is_group: false,
-                targetUserId:targetUserId });
+                targetUserId:targetUserId.toString() });     
         if (rows.length > 0){
             return compressParticipats(rows)[0];
         } else {
@@ -74,7 +96,7 @@ export async function createChat(name: string, isGroup: boolean, participants: s
         const [resultChat] = await pool.execute<ResultSetHeader>(query,
             [isGroup, name]);
         for (const p of participants) {
-            const query: string = 'INSERT INTO participants (id_chat, Id_user) VALUES (?, ?)';
+            const query: string = 'INSERT INTO participants (chatId, userId) VALUES (?, ?)';
             const [result] = await pool.execute<ResultSetHeader>(query,
                 [resultChat.insertId, p]); 
         }

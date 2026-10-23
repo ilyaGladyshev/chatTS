@@ -2,11 +2,12 @@ import {IMessage} from './types/message';
 import { pool } from './db';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
-export async function saveMessageToHistory(message: IMessage): Promise<void>{
+export async function saveMessageToHistory(text: string, senderId: string, chatId: string): Promise<string>{
     try {
-        const query: string = 'INSERT INTO Messages (chat_id, sender_id, text, timestamp) VALUES (?, ?, ?, ?)';
+        const query: string = 'INSERT INTO Messages (chatId, senderId, text, timestamp) VALUES (?, ?, ?, ?)';
         const [result] = await pool.execute<ResultSetHeader>(query,
-            [message.chatId, message.senderId, message.text, new Date(message.timestamp)]);          
+            [chatId, senderId, text, new Date(Date.now())]);          
+        return result.insertId.toString();     
     } catch (error) {
         console.error('saveMessageToHistory error: ', error);
         throw error;    
@@ -15,8 +16,8 @@ export async function saveMessageToHistory(message: IMessage): Promise<void>{
 
 export async function findMessagesByChatId(chatId: string): Promise<IMessage[]>{
     try {
-        const [rows, fields] = await pool.execute<(IMessage & RowDataPacket)[]>("SELECT id, chat_id, " + 
-            "sender_id, text, timestamp from messages where chat_id = :chatId",
+        const [rows, fields] = await pool.execute<(IMessage & RowDataPacket)[]>("SELECT id, chatId, " + 
+            "senderId, text, timestamp from messages where chatId = :chatId",
             {chatId: chatId});
         return rows;        
     } catch (error) {

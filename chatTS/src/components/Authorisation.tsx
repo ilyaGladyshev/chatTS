@@ -86,6 +86,7 @@ export default function Authorisation({onLoginSuccess} : AuthorisationProps) {
 				if (response.ok && data.success){
 					alert('Регистрация успешна!');
 					onLoginSuccess(data.user);
+                    setStage(EAuthStage.Succes);  
 				}	
 			} catch (error) {
 				console.error("Ошибка сети", error);	

@@ -1,11 +1,13 @@
-
-input, select{
+input, select {
   display: block;
   width: 100%;
   padding: 10px;
   box-sizing: border-box;
+  border: 1px solid #ccc; /* Добавил рамку, чтобы было видно в светлой теме */
+  background: #fff;
 }
-button{
+
+button {
   width: 100%;
   padding: 10px;
   background: #007bff;
@@ -13,113 +15,199 @@ button{
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  transition: background 0.2s;
 }
-p{
-  color: #666;
+button:hover {
+  background: #0056b3;
 }
-form{
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
-  flex-direction: column;
-}
-h2{
-  margin-bottom: 20px;
-}
-nav{
-  display: flex;
-}
-label{
-  display: block;
-  margin: 5px 0;
-}
-.authorisation-container{
+
+p { color: #333; } /* Чуть темнее, чем #666 */
+form { display: flex; gap: 10px; margin-bottom: 12px; flex-direction: column; }
+h2 { margin-bottom: 20px; color: #222; }
+nav { display: flex; }
+label { display: block; margin: 5px 0; color: #444; }
+
+.authorisation-container {
   max-width: 400px;
   margin: 100px auto;
   padding: 25px;
   border: 1px solid #ccc;
   border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-.autorization-form{
-    color: lightcyan;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 10px;
+
+.autorization-form {
+  color: #333; /* Исправил цвет текста, lightcyan в светлой теме выглядит странно */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
 }
-.error{
-  color: red;
-  margin-bottom: 15px;
-}
-.chat-container{
+
+.error { color: #dc3545; margin-bottom: 15px; font-weight: bold; }
+
+.chat-container {
   max-width: 500px;
   margin: 30px auto;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
+  background: #fff; /* Фон контейнера белый */
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-.chat-window{
-  border: 1px solid #ccc;
+
+.chat-window {
+  border: 1px solid #ddd;
   height: 300px;
-  overflow: scroll;
+  overflow-y: scroll;
   padding: 15px;
   border-radius: 8px;
   background: #f9f9f9;
   margin-bottom: 15px;
 }
-.chat-item_left{
- text-align: left;
- margin-bottom: 10px;
+
+/* Пузыри сообщений (Светлая тема) */
+.chat-item_left {
+  text-align: left;
+  margin-bottom: 10px;
+  opacity: 1; 
+  filter: none; 
 }
-.chat-item_right{
- text-align: right;
- margin-bottom: 10px;
-}
-.chat-textbox-my{
-  display: inline-block;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: #007bff;
-  color: #fff;
-}
-.chat-textbox-other{
+.chat-textbox-other {
   display: inline-block;
   padding: 8px 12px;
   border-radius: 12px;
   background: #e4e6eb;
   color: #000;
+  max-width: 80%;
 }
-.menu-content{
-  display: flex;
-  border: 1px solid silver;
+
+.chat-item_right_pending {
+  text-align: right;
+  margin-bottom: 10px;
+  opacity: 0.7; 
+  filter: grayscale(20%);
 }
-.menu-content-left{
-  width: 25%;
-  border: 1px solid silver;
+.chat-item_right_delivered {
+  text-align: right;
+  margin-bottom: 10px;
+  opacity: 1; 
+  filter: none;
 }
-.menu-content-right{
-  width: 75%;
-  border: 1px solid silver;
+.chat-textbox-my {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #007bff;
+  color: #fff;
+  max-width: 80%;
+  word-wrap: break-word;
 }
-.button-chat{
+
+.menu-content { display: flex; border: 1px solid silver; }
+.menu-content-left { width: 25%; border-right: 1px solid silver; padding: 10px; }
+.menu-content-right { width: 75%; padding: 10px; }
+
+.button-chat {
   border-radius: 15px;
   background-color: silver;
-  border: 1px solid black;  
+  border: 1px solid #999;  
+  color: #333;
+  cursor: pointer;
 }
-.create-btn{
-  margin-top: 25px;
-}
-.group-participants{
+.button-chat:hover { background-color: #ccc; }
+
+.create-btn { margin-top: 25px; }
+.group-participants { display: flex; margin-left: 25%; gap: 10px; flex-wrap: wrap; }
+.form-group {
   display: flex;
-  margin-left: 25%;
   gap: 10px;
+  margin-bottom: 12px;
+  flex-direction: column;
+  margin-left: 20%;
+  margin-right: 20%;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 15px;
+  background: #fff;
 }
-.form-group{
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-    flex-direction: column;
-    margin-left: 20%;
-    margin-right: 20%;
-    border: aqua solid thick;
-    border-radius: 12px;
+
+
+/* --- ТЁМНАЯ ТЕМА --- */
+
+body.dark-theme, .dark-theme {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.dark-theme button {
+  background-color: #424242; 
+  color: #ffffff;
+  border: none;
+}
+
+.dark-theme button:hover {
+  background-color: #5d5d5d;
+}
+
+.dark-theme .button-chat {
+  background-color: #333;
+  border-color: #555;
+  color: #fff;
+}
+.dark-theme .button-chat:hover {
+  background-color: #4a4a4a;
+}
+
+.dark-theme input, 
+.dark-theme select {
+  background-color: #1e1e1e;
+  border-color: #404040;
+  color: #fff;
+}
+
+.dark-theme p, 
+.dark-theme label, 
+.dark-theme h2 {
+  color: #e0e0e0;
+}
+
+.dark-theme .authorisation-container,
+.dark-theme .chat-container,
+.dark-theme .form-group,
+.dark-theme .menu-content,
+.dark-theme .menu-content-left,
+.dark-theme .menu-content-right {
+  background: #1e1e1e;
+  border-color: #404040;
+  color: #e0e0e0;
+  box-shadow: none;
+}
+
+.dark-theme .error {
+  color: #f8d7da;
+}
+
+.dark-theme .chat-window {
+  background: #121212;
+  border-color: #333;
+  color: #e0e0e0;
+}
+
+.dark-theme .chat-textbox-other {
+  background: #2d2d2d;
+  color: #e0e0e0;
+  border: 1px solid #404040;
+}
+
+.dark-theme .chat-textbox-my {
+  background: silver; /* спокойный синий */
+  color: #fff;
+  border: none;
+}
+
+.dark-theme .chat-item_right_pending {
+  opacity: 0.6;
+  filter: brightness(0.8);
 }

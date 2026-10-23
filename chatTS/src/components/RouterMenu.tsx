@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Authorisation from './Authorisation';
 import Chat from './Chat';
 import ChatList from './ChatList';
@@ -13,7 +13,7 @@ import CreateGropForm from './CreateGroupForm';
 function RouterMenu(){
     const [theme, setTheme] = useState('light');
     const [currentTab, setCurrentTab] = useState<TTabType>('chats'); 
-	const [currentUser, setCurrentUser] = useState<IUserProfile | null>(null);
+	const [currentUser, setCurrentUser] = useState<IUserProfile | null>(null); 
     const [activeChatId] = useState<string|null>(null); 
     const [chatState, setChatState] = useState<IChatState | null>(null);
     const [chatsList, setChatsList] = useState<IChatData[]>([]);
@@ -23,38 +23,41 @@ function RouterMenu(){
 		setTheme((prevTheme) => (prevTheme === 'light'? 'dark' : 'light'));
 	}
 
-    const handleContactClick = async (targetUser: IUserPublic) => {
+    const handleContactClick = useCallback(async (targetUser: IUserPublic) => {
         const token = localStorage.getItem('token');
         if (!currentUser) return;
         const response = await fetch('/api/chats/find_chat', {
             method: 'POST',
 			headers: {
-                'Content-Type': 'application',
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({currentUserId: currentUser.id, targetUserId: targetUser.id})     
         });
         const data = await response.json();
-        const targetUserArray = [targetUser];
+        const targetUsers : (IUserPublic | undefined)[] = [];
+            targetUsers.push(usersList.find((user) => user.id === targetUser.id));
+       
         if (data.status === 'found'){
-            setChatState({mode: 'view', chatId: data.chatId, targetUser: targetUserArray, chat: null});
+            setChatState({mode: 'view', chatId: data.chatId, targetUser: targetUsers, chat: null});
         } else{
-            setChatState({mode: 'create_private', chatId: null, targetUser: targetUserArray, chat: null});            
+            setChatState({mode: 'create_private', chatId: null, targetUser: targetUsers, chat: null});            
         }
-    }
-    const handleCreateGroup = () => {
-        setChatState({mode: 'create_group', chatId: null, targetUser: null, chat: null});
-    }
+    },[currentUser]);
 
-    const handleChatClick = async (chat: IChatData) => {
-        const filteredParticipants = chat.participants.filter(userId => {return userId != currentUser?.id});
-        const targetUsers : (IUserPublic | undefined)[] = filteredParticipants.map((userId: string) => { 
+    const handleCreateGroup = useCallback(() => {
+        setChatState({mode: 'create_group', chatId: null, targetUser: null, chat: null});
+    },[]);
+
+    const handleChatClick = useCallback ((chat: IChatData) => {
+        //const filteredParticipants = chat.participants.filter(userId => {return userId != currentUser?.id});
+        const targetUsers : (IUserPublic | undefined)[] = chat.participants.map((userId: string) => { 
             return usersList.find((user) => user.id === userId)
         });
         setChatState({mode: 'view', chatId: chat.id, targetUser: targetUsers, chat: chat});        
-    }
+    }, [currentUser]);
 
-    const handleUpdateLastMesage = (chatId: string | null, incommingMessage: any) => {
+    const handleUpdateLastMesage = useCallback((chatId: string | null, incommingMessage: any) => {
         setChatsList((prevChats) => 
             prevChats.map((chat) => 
                 chat.id === chatId
@@ -62,8 +65,37 @@ function RouterMenu(){
                 : chat
             )
         );
-    }
-
+    },[]);
+    
+    useEffect(() => {
+	async function checkAutoLogin(){
+			const token = localStorage.getItem('token');
+			if (!token){
+				setLoading(false);
+				return;
+			}
+			try {
+				const response = await fetch('/api/auth/me', {
+					method: 'GET',
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+				const data = await response.json();
+				if (response.ok && data.status === "success"){
+					setCurrentUser(data.user);
+				} else{
+					localStorage.removeItem('token');
+				}	
+			} catch (error) {
+				console.error('Ошибка авторизации', error);	
+				setCurrentUser(null);           
+			} finally{
+				setLoading(false);
+			}
+		}            
+        checkAutoLogin();
+    }, [])
     useEffect(() =>{
         async function fetchUsers() {
             try {
@@ -86,46 +118,20 @@ function RouterMenu(){
             } catch (error) {
                 console.error('Не удалось загрузить чаты', error);	
             }
-        }    
-		async function checkAutoLogin(){
-			const token = localStorage.getItem('token');
-			if (!token){
-				setLoading(false);
-				return;
-			}
-			try {
-				const response = await fetch('/api/auth/me', {
-					method: 'GET',
-					headers: {
-						'Authorization': `Bearer ${token}`
-					}
-				});
-				const data = await response.json();
-				if (response.ok && data.status === "success"){
-					setCurrentUser(data.user);
-				} else{
-					localStorage.removeItem('token');
-				}	
-			} catch (error) {
-				console.error('Ошибка авторизации', error);	
-				setCurrentUser(null);
-			} finally{
-				setLoading(false);
-			}
-		}                
+        }        
         fetchChats();
         fetchUsers();
-        checkAutoLogin();
-    }, []);
+    }, [currentUser]);
+
     if (loading){
         return (
-            <div>
+            <div className={theme === 'dark' ? 'dark-theme' : ''}>
                 Идет загрузка пользлвателя, пожалуйста, подождите...
             </div>
         )
     }
     return (
-        <div>
+        <div className={theme === 'dark' ? 'dark-theme' : ''}>
 			<div>
 				<button onClick={toggleTheme} className="btn-secondary">
 					{theme === 'light' ? 'Темная тема' : 'Светлая тема'}
@@ -134,16 +140,16 @@ function RouterMenu(){
             {!currentUser ? (
                 <Authorisation 
                 onLoginSuccess={
-                    (currentUser) => {
-                        setCurrentUser(currentUser);
+                    (user) => {
+                        setCurrentUser(user);                   
                         try {
-                            if (!currentUser.token) return;
-                            localStorage.setItem('token', currentUser.token);                           
+                            if (!user.token) return;
+                            localStorage.setItem('token', user.token);                           
                         } catch (error) {
                             console.warn('Локальное хранилище переполнено! Производим очистку...');
                             localStorage.clear();
-                            if (!currentUser.token) return;
-                            localStorage.setItem('token', currentUser.token);	
+                            if (!user.token) return;
+                            localStorage.setItem('token', user.token);	
 					    }
 
                     }
@@ -167,8 +173,7 @@ function RouterMenu(){
                                 {currentTab === 'chats' && <ChatList currentUser={currentUser}
                                                                     onSelectChat={(chat) => handleChatClick(chat)}
                                                                     onStartCreateGroup={handleCreateGroup}
-                                                                    usersList={usersList}
-                                                                    chatsList={chatsList}></ChatList>}
+                                                                    usersList={usersList}></ChatList>}
                                 {currentTab === 'contacts' && <ContactList currentUser={currentUser} 
                                                                         onSelectContact={(user: IUserPublic) => handleContactClick(user)}
                                                                         userList={usersList}></ContactList>}
@@ -192,7 +197,14 @@ function RouterMenu(){
                                 )}  
                                 {chatState?.mode === 'create_group' && (
                                     <CreateGropForm usersList={usersList}
-                                                    onGroupCreated={(newChatId: string)=>setChatState({mode: 'create_group', chatId: newChatId, targetUser: null, chat: null})}
+                                                    onGroupCreated={
+                                                        (newChat: IChatData)=> {
+                                                            const targetUsers : (IUserPublic | undefined)[] = newChat.participants.map((userId: string) => { 
+                                                                return usersList.find((user) => user.id === userId)
+                                                            });
+                                                            setChatState({mode: 'view', chatId: newChat.id, targetUser: targetUsers, chat: newChat})
+                                                        }
+                                                    }
                                     ></CreateGropForm>)}                        
                             </div>      
                         </main>

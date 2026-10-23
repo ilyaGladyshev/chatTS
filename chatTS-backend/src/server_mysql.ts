@@ -3,7 +3,7 @@ import {URL} from 'url';
 import { WebSocket, WebSocketServer } from 'ws';
 import {IAuthResponse, IUserProfile, IUserPublic, IUsersDB} from "./types/auth";
 import { findUserBylogin, createUser, findUserByloginOnly, findUserById, readUsersFile, getLogins } from './dbUsersMySQL';
-import { readAllChats, findChatByCurrentAndTarget, findChatById, createChat } from './dbChatsMySQL';
+import { readAllChats, findChatByCurrentAndTarget, findChatById, createChat, getAllParticipantsByChatById } from './dbChatsMySQL';
 import {saveMessageToHistory, findMessagesByChatId} from "./dbMessagesMySQL";
 import { IChatData } from './types/chats';
 import { IMessage } from './types/message';
@@ -28,11 +28,21 @@ function getRequestBody(req: http.IncomingMessage): Promise<any> {
     });    
 }
 
+function authEndpoint(req: http.IncomingMessage, res: http.ServerResponse){
+    let faile = false;
+    const authHeader: string = req.headers['authorization'] as string;
+    const token = authHeader && authHeader.split(' ')[1];
+    const decodedUser = verifyToken(token);
+    if (!decodedUser){
+        faile = true;
+    }
+    return {faile, decodedUser};   
+}
+
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const pathname = url.pathname;
     try {
-        const JWT_SECRET = process.env.JWT_SECRET;
         if(req.method === 'POST' && pathname === '/api/chats/find_chat_by_id'){
             const chatId: string = url.searchParams.get('chatId') || 'chat_general';
             const existingChat: IChatData|undefined = await findChatById(chatId);
@@ -43,13 +53,11 @@ const server = http.createServer(async (req, res) => {
                return res.end(JSON.stringify({status: 'not_found'}));                
             }
         } else if(req.method === 'POST' && pathname === '/api/chats/find_chat'){
-            const authHeader: string = req.headers['authorization'] as string;
-            const token = authHeader && authHeader.split(' ')[1];
-            const decodedUser = verifyToken(token);
-            if (!decodedUser){
+            const {faile} = authEndpoint(req, res);
+            if (faile) {
                 res.writeHead(400, jsonHeader);
                 return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
-            }              
+            };    
             const {currentUserId, targetUserId} = await getRequestBody(req);
             const existingChat: IChatData|undefined = await findChatByCurrentAndTarget(currentUserId, targetUserId);
             res.writeHead(200, jsonHeader);
@@ -59,24 +67,22 @@ const server = http.createServer(async (req, res) => {
                return res.end(JSON.stringify({status: 'not_found'}));                
             }
         } else if(req.method === 'POST' && pathname === '/api/chats/create'){
-            console.log("start creating chat");
-            const authHeader: string = req.headers['authorization'] as string;
-            const token = authHeader && authHeader.split(' ')[1];
-            const decodedUser = verifyToken(token);
-            if (!decodedUser){
+            const {faile} = authEndpoint(req, res);
+            if (faile) {
                 res.writeHead(400, jsonHeader);
                 return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
-            }              
+            };             
             const {name, isGroup, participants} = await getRequestBody(req);
-            console.log(name, isGroup, participants);
             const chats: IChatData | undefined = await createChat(name, isGroup, participants); 
             if (!chats) return;
             res.writeHead(200, jsonHeader);
-            return res.end(JSON.stringify(chats.id));                     
+            return res.end(JSON.stringify(chats));                     
         } else if(req.method === 'GET' && pathname === '/api/chats/history_group'){
-            const authHeader: string = req.headers['authorization'] as string;
-            const token = authHeader && authHeader.split(' ')[1];
-            const decodedUser = verifyToken(token); 
+            const {faile} = authEndpoint(req, res);
+            if (faile) {
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
+            }; 
             const chats: IChatData[] = await readAllChats(); 
             const chatsWithLastMessage = await Promise.all(Object.values(chats).map(async (chat: IChatData) => {
                 const history: IMessage[] = await findMessagesByChatId(chat.id);
@@ -88,14 +94,29 @@ const server = http.createServer(async (req, res) => {
             }));       
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(chatsWithLastMessage));
-        } else if(req.method === 'GET' && pathname === '/api/messages/history'){
-            const authHeader: string = req.headers['authorization'] as string;
-            const token = authHeader && authHeader.split(' ')[1];
-            const decodedUser = verifyToken(token);
-            if (!decodedUser){
+        } else if(req.method === 'POST' && pathname === '/api/messages/create'){
+            const {faile} = authEndpoint(req, res);
+            if (faile) {
                 res.writeHead(400, jsonHeader);
                 return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
-            }              
+            };
+            const {text, timestamp, senderId, chatId} = await getRequestBody(req); 
+            const newMessage: IMessage = {
+                senderId,
+                text,
+                timestamp,
+                chatId                
+            }          
+            const id = await saveMessageToHistory(newMessage.text, newMessage.senderId, newMessage.chatId);
+            newMessage.id = id;
+            res.writeHead(200, jsonHeader);
+            return res.end(JSON.stringify(newMessage));
+        } else if(req.method === 'GET' && pathname === '/api/messages/history'){
+            const {faile} = authEndpoint(req, res);
+            if (faile) {
+                res.writeHead(400, jsonHeader);
+                return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
+            };          
             const chatId: string = url.searchParams.get('chatId') || 'chat_general';
             const history: IMessage[] = await findMessagesByChatId(chatId);
             res.writeHead(200, jsonHeader);
@@ -114,13 +135,11 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(responseData));
         } else if (req.method === 'GET' && pathname === '/api/auth/me')  {
-            const authHeader: string = req.headers['authorization'] as string;
-            const token = authHeader && authHeader.split(' ')[1];
-            const decodedUser = verifyToken(token);
-            if (!decodedUser){
+            const {faile , decodedUser} = authEndpoint(req, res);
+            if ((faile) || (!decodedUser))  {
                 res.writeHead(400, jsonHeader);
                 return res.end(JSON.stringify({ error: "Токен невалиден или просрочен"}));
-            }           
+            };              
             const user = await findUserById(decodedUser.id);
             if (!user){
                 res.writeHead(404, jsonHeader);
@@ -150,7 +169,7 @@ const server = http.createServer(async (req, res) => {
             const logins: string[] = [];
             users.map((u) => {
                 if (u.login) logins.push(u.login)}
-            );                        
+            );                   
             res.writeHead(200, jsonHeader);
             return res.end(JSON.stringify(logins));
         } else if (req.method === 'GET' && pathname === '/api/auth/usersName')  {
@@ -171,7 +190,7 @@ const server = http.createServer(async (req, res) => {
 const wss = new WebSocketServer({server});
 const clients = new Map<string, WebSocket>;
 
-wss.on('connection', (socket, req) => {
+wss.on('connection', async (socket, req) =>  {
     console.log('Новое WebSocket соединение установлено!');
     const baseUrl = `http://${req.headers.host}`;
     const url = new URL(req.url || '',  baseUrl);
@@ -183,34 +202,47 @@ wss.on('connection', (socket, req) => {
         return;
     }    
     let currentUserId: string | undefined = decodedUser?.id;
-    socket.on("message", (rawData) => {
+    socket.on("message", async (rawData) => {
         try {
             const packet = JSON.parse(rawData.toString());
             if (packet.type === 'auth'){
                 currentUserId = currentUserId;
-                clients.set(decodedUser.id, socket);
+                clients.set(decodedUser.id.toString(), socket);
                 console.log(`Пользователь ${decodedUser.id} успешно подключился!`);
             }
             else if (packet.type === 'message'){
-                const {text, recipientId, senderId, chatId} = packet;
-                const newMessage = {
-                    id: `msg_${Date.now()}`,
-                    senderId,
-                    text,
-                    timestamp: Date.now(),
-                    chatId,
-                    recipientId                   
-                }
-                saveMessageToHistory(newMessage);
-                const messagePacket = JSON.stringify({
+                const {text, senderId, chatId} = packet;
+                try {
+
+                    const messageId = saveMessageToHistory(text, senderId, chatId);
+
+                    const participants = await getAllParticipantsByChatById(chatId);
+                    if (!participants || participants.length === 0) {
+                    return;
+                    }
+
+                    const packetToSend = JSON.stringify({
                     type: 'new_message',
-                    data: newMessage
-                });
-                const recipientSocket = clients.get(recipientId);
-                if (recipientSocket && recipientSocket.readyState){
-                    recipientSocket.send(messagePacket);
+                    data: {
+                        id: messageId,
+                        senderId,
+                        text,
+                        timestamp: Date.now(),
+                        chatId,
+                    },
+                    });
+                    for (const participantId of participants) {                    
+                        const recipientSocket = clients.get(participantId.toString());
+                        if (
+                            recipientSocket &&
+                            recipientSocket.readyState === WebSocket.OPEN
+                        ) {
+                            recipientSocket.send(packetToSend);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Ошибка при обработке сообщения:', error);
                 }
-                socket.send(messagePacket);
             }
         } catch (error) {
             console.error('Ошибка обработки пакета', error);    

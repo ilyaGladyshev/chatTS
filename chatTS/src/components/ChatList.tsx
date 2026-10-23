@@ -1,35 +1,70 @@
 import type { IUserProfile, IUserPublic } from "../types/auth";
-import { useEffect} from "react";
+import { useEffect, useState} from "react";
 import { type IChatData} from "../types/chats"
 
 export interface IChatProps{
     currentUser: IUserProfile;
     onSelectChat: (chat: IChatData) => void; 
     onStartCreateGroup: () => void; 
-    chatsList: IChatData[];
     usersList: IUserPublic[];  
 }
 
-const ChatList = ({currentUser, onSelectChat, onStartCreateGroup, chatsList, usersList}: IChatProps) => {
+const ChatList = ({currentUser, onSelectChat, onStartCreateGroup, usersList}: IChatProps) => {
+    const [chatsList, setChatsList] = useState<IChatData[]>([]);
+    const [loading, setLoading] = useState(true);
     useEffect(() => {
-    }, [])
+        let isMounted = true;
+        async function fetchChats() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/chats/history_group',{
+                    'method':'GET',
+                    'headers':{'Authorization': `Bearer ${token}`}
+                } );
+                const chatsResponse = await response.json();
+                if (isMounted) {
+                    setChatsList(chatsResponse);
+                    setLoading(false);
+                }		
+            } catch (error) {
+                console.error('Не удалось загрузить чаты', error);	
+            }
+        } 
+
+        if (currentUser) {
+            fetchChats();
+        } else {
+            setChatsList([]);
+            setLoading(false);
+        }
+
+        return () => {
+            isMounted = false; 
+        };
+    }, [currentUser])
     const getChatName = (chat: IChatData) => {
         if (chat.isGroup && chat.name) return chat.name;
-        const companionId = chat.participants.find(id => id != currentUser.id);
-        const companion = usersList.find(users => users.id === companionId);
+        const companionId = chat.participants.find(id => id != currentUser.id.toString());
+        const companion = usersList.find(users => users.id.toString() === companionId);
         if (companion) return companion.userName;
         else return 'Неизвестный собеседник';
     }
+    
+    if (loading) {
+        return <div>Загрузка чатов...</div>;
+    }
+    
     return (
         <div>
             {
-                ...chatsList.map((chat) => (
-                    chat.participants.includes(currentUser.id) && 
-                    <button className="button-chat"
-                            key = {chat.id}
-                            onClick={() => onSelectChat(chat)}>
-                                {getChatName(chat)}
-                    </button>
+                ...chatsList
+                    .filter(chat => chat.participants.includes(currentUser.id.toString()))
+                    .map((chat) => (
+                        <button className="button-chat"
+                                key = {chat.id}
+                                onClick={() => onSelectChat(chat)}>
+                                    {getChatName(chat)}
+                        </button>
                 ))    
             }
             <button className="create-btn"

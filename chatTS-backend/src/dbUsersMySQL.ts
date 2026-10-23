@@ -42,19 +42,14 @@ export async function findUserBylogin(login: string, password: string): Promise<
         const [rows, fields] = await pool.execute<RowDataPacket[]>("SELECT id, login, firstName, " +
             "lastName, passwordHash from users where login = :lowerLogin LIMIT 1",
             {lowerLogin: lowerLogin});
-        console.log('query finised');
         if (!rows.length) return {status: 'not_found', error: 'Пользователь не найден'};
         const user = rows[0] as IUserProfile | undefined;
-        console.log(user);
         if (user){
             const currentHash = user.passwordHash;
-            console.log(currentHash);
             if (currentHash){
                 const isMatch: boolean = await bcryptjs.compare(password, currentHash);
-                console.log(isMatch);
                 if (isMatch) { 
                     const token = generateToken({ id: user.id}); 
-                    console.log(token);
                     return {status: 'success', 
                         user: {id: user.id, token: token, firstName: user.firstName, lastName: user.lastName, login: user.login}}
                     };
@@ -114,11 +109,13 @@ export async function createUser(login: string, firstName: string, lastName: str
             'passwordHash) VALUES (?, ?, ?, ?)';
             const [result] = await pool.execute<ResultSetHeader>(query,
                 [lowerLogin, firstName, lastName, passwordHash]);        
+            const token = generateToken({ id: result.insertId.toString()}); 
             const user: IUserProfile = {
                 id: result.insertId.toString(),
                 login: lowerLogin, 
                 firstName : firstName,
                 lastName : lastName,
+                token: token
             }
             return user;	           
         } catch (error) {
