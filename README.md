@@ -48,6 +48,7 @@ chatTS/
     │   ├── dbMessagesMySQL.ts
     │   └── jwt.ts
     └── .env                # не коммитится
+```
 Рабочий сервер — server_mysql.ts. Старые JSON-модули (server.ts, dbUsers.ts и т.п.) можно не использовать.
 ---
 
@@ -88,7 +89,7 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=ваш_пароль_от_mysql
 DB_NAME=chat_ts
-``
+```
 ⚠️ Файл .env добавлен в .gitignore и не должен попадать в публичный репозиторий.
 
 ### 5. Установка зависимостей и запуск
