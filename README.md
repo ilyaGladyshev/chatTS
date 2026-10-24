@@ -16,10 +16,10 @@ Fullstack-приложение для обмена сообщениями в р�
 * История сообщений
 * Список пользователей для начала диалога
 * Защита API и WebSocket-подключений токеном
-*   **Автоматический скролл:** Интеллектуальное управление UX на клиенте — автоматическая плавная прокрутка к новым сообщениям с помощью React `useRef` и метода `scrollIntoView`.
-*   **Кастомная темная тема:** Интерфейс поддерживает светлый и темный режимы, реализованные на чистом **CSS (Custom Properties)** с сохранением выбора пользователя в `localStorage`.
-*   **Строгая типизация:** Полное покрытие кода интерфейсами TypeScript как на фронтенде, так и на бэкенде. Чистое разделение сущностей базы данных (`RowDataPacket`) и бизнес-логики приложения.
-*   **Оптимистичный UI
+* Автоматический скролл:** Интеллектуальное управление UX на клиенте — автоматическая плавная прокрутка к новым сообщениям с помощью React `useRef` и метода `scrollIntoView`.
+* Кастомная темная тема:** Интерфейс поддерживает светлый и темный режимы, реализованные на чистом **CSS (Custom Properties)** с сохранением выбора пользователя в `localStorage`.
+* Строгая типизация:** Полное покрытие кода интерфейсами TypeScript как на фронтенде, так и на бэкенде. Чистое разделение сущностей базы данных (`RowDataPacket`) и бизнес-логики приложения.
+* Оптимистичный UI
 ---
 
 ![Чат](/assets/Chat.jpg)
@@ -71,17 +71,17 @@ CREATE DATABASE chat_ts CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE chat_ts;
 
 Примените схему (создание таблиц):
-bash
+```bash
 mysql -u root -p chat_ts < chatTS-backend/db/schema.sql
 
 (Опционально) Заполните тестовыми данными:
-bash
+```bash
 mysql -u root -p chat_ts < chatTS-backend/db/seed.sql
 Файл seed.sql содержит готовые чаты, пользователей и сообщения — удобно для быстрой проверки.
 
 ### 4. Настройка окружения
 В папке chatTS-backend создайте файл .env (если его нет) и добавьте:
-env
+```env
 JWT_SECRET=ваш_секретный_ключ_здесь
 DB_HOST=localhost
 DB_USER=root
@@ -108,30 +108,22 @@ npm run dev
 ```
 Адрес: http://localhost:3000
 ---
+
+API (кратко)
+
+| Метод | Путь | Описание |
+| :--- | :--- | :--- |
+| POST | /api/auth/register | Регистрация |
+| POST | /api/auth/login | Вход, выдаёт JWT |
+| GET | /api/auth/me | Текущий пользователь |
+| GET | /api/chats/history_group | Список чатов |
+| POST | /api/chats/create | Создать чат |
+| GET | /api/messages/history | История сообщений |
+
+WebSocket: подключение с токеном, например
+ws://localhost:5000?token=<JWT>
+---
+
 Автор
 Илья Гладышев
 GitHub: ilyaGladyshev
-API (кратко)
-Метод
-Путь
-Описание
-POST
-/api/auth/register
-Регистрация
-POST
-/api/auth/login
-Вход, выдаёт JWT
-GET
-/api/auth/me
-Текущий пользователь
-GET
-/api/chats/history_group
-Список чатов
-POST
-/api/chats/create
-Создать чат
-GET
-/api/messages/history
-История сообщений
-WebSocket: подключение с токеном, например
-ws://localhost:5000?token=<JWT>
