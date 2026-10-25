@@ -116,7 +116,7 @@ npm run dev
 API (кратко)
 
 | Метод | Путь | Описание |
-| :--- | :--- | :--- |
+| --- | --- | --- |
 | POST | /api/auth/register | Регистрация |
 | POST | /api/auth/login | Вход, выдаёт JWT |
 | GET | /api/auth/me | Текущий пользователь |
