@@ -257,9 +257,9 @@ wss.on('connection', async (socket, req) =>  {
     });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log('========================================');
     console.log('ЧАТ-БЭКЕНД НА TYPESCRIPT ЗАПУЩЕН!');
-    console.log(`Слушает порт http://localhost:${PORT}`);
+    console.log(`Слушает порт http://0.0.0.0:${PORT}`);
     console.log('========================================');    
 })

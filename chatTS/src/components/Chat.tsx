@@ -4,6 +4,7 @@ import { type IMessage} from '../types/message';
 import { useSocket } from '../SocketContext';
 import '../App.css';
 import { type IChatData } from '../types/chats';
+import {VITE_API_WS}  from '../../api.ts';
 
 interface IChatProps{
     currentUser: IUserProfile;
@@ -29,7 +30,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
         const loadMessages = async () => {
             const token = localStorage.getItem('token');
             if (!activeChatId) return;
-            const response = await fetch(`/api/messages/history?chatId=${activeChatId}`,{
+            const response = await fetch(`${VITE_API_WS}/api/messages/history?chatId=${activeChatId}`,{
                 'method': 'GET',
                 'headers':{
                     'Authorization': `Bearer ${token}`
@@ -120,7 +121,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
         if (!newChatId){
             try {
                 const participants: (string | undefined) [] = [currentUser.id, targetUser[0]?.id];
-                const response = await fetch('/api/chats/create', {
+                const response = await fetch(`${VITE_API_WS}/api/chats/create`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',

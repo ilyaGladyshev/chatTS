@@ -1,6 +1,7 @@
 import type { IUserProfile, IUserPublic } from "../types/auth";
 import { useEffect, useState} from "react";
 import { type IChatData} from "../types/chats"
+import {VITE_API_WS} from '../../api.ts';
 
 export interface IChatProps{
     currentUser: IUserProfile;
@@ -17,7 +18,7 @@ const ChatList = ({currentUser, onSelectChat, onStartCreateGroup, usersList}: IC
         async function fetchChats() {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('/api/chats/history_group',{
+                const response = await fetch(`${VITE_API_WS}/api/chats/history_group`,{
                     'method':'GET',
                     'headers':{'Authorization': `Bearer ${token}`}
                 } );

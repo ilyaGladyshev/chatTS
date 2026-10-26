@@ -9,6 +9,7 @@ import { type IUserProfile, type IUserPublic } from '../types/auth';
 import { SocketProvider } from '../SocketContext';
 import type { IChatData } from '../types/chats';
 import CreateGropForm from './CreateGroupForm';
+import {VITE_API_WS} from '../../api.ts';
 
 function RouterMenu(){
     const [theme, setTheme] = useState('light');
@@ -26,7 +27,7 @@ function RouterMenu(){
     const handleContactClick = useCallback(async (targetUser: IUserPublic) => {
         const token = localStorage.getItem('token');
         if (!currentUser) return;
-        const response = await fetch('/api/chats/find_chat', {
+        const response = await fetch(`${VITE_API_WS}/api/chats/find_chat`, {
             method: 'POST',
 			headers: {
                 'Content-Type': 'application/json',
@@ -50,7 +51,6 @@ function RouterMenu(){
     },[]);
 
     const handleChatClick = useCallback ((chat: IChatData) => {
-        //const filteredParticipants = chat.participants.filter(userId => {return userId != currentUser?.id});
         const targetUsers : (IUserPublic | undefined)[] = chat.participants.map((userId: string) => { 
             return usersList.find((user) => user.id === userId)
         });
@@ -75,7 +75,7 @@ function RouterMenu(){
 				return;
 			}
 			try {
-				const response = await fetch('/api/auth/me', {
+				const response = await fetch(`${VITE_API_WS}/api/auth/me`, {
 					method: 'GET',
 					headers: {
 						'Authorization': `Bearer ${token}`
@@ -99,7 +99,7 @@ function RouterMenu(){
     useEffect(() =>{
         async function fetchUsers() {
             try {
-                const response = await fetch('/api/auth/usersName');
+                const response = await fetch(`${VITE_API_WS}/api/auth/usersName`);
                 const users = await response.json();
                 setUsersList(users);			
             } catch (error) {
@@ -109,7 +109,7 @@ function RouterMenu(){
         async function fetchChats() {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('/api/chats/history_group',{
+                const response = await fetch(`${VITE_API_WS}/api/chats/history_group`,{
                     'method':'GET',
                     'headers':{'Authorization': `Bearer ${token}`}
                 } );

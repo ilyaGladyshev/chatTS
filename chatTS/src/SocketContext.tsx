@@ -1,4 +1,5 @@
 import React, {useState, useEffect, createContext, useContext, useRef} from "react";
+import {VITE_API_WS} from '../api.ts'
 
 interface ISocketContext {
     socket: WebSocket | null;
@@ -42,7 +43,7 @@ export const SocketProvider: React.FC<{ userId: string | undefined; children: Re
             socketRef.current = null;
         }
 
-        const wsURL = `ws://localhost:5000?token=${token}`;
+        const wsURL = `${VITE_API_WS}?token=${token}`;
         const wsInstance = new WebSocket(wsURL);
         wsInstance.onopen = () => {
             setIsConnected(true);

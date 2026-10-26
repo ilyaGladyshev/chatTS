@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import { EAuthStage, type IAuthResponse, type IUserProfile } from '../types/auth';
-
+import {VITE_API_WS} from '../../api.ts';
 interface AuthorisationProps {
     onLoginSuccess: (user: IUserProfile) => void;
 }
@@ -20,7 +20,7 @@ export default function Authorisation({onLoginSuccess} : AuthorisationProps) {
 		async function fetchUsers() {
 			try {
 				setSelectedLogin('new_account');
-				const response = await fetch('/api/auth/users');
+				const response = await fetch(`${VITE_API_WS}/api/auth/users`);
 				const logins = await response.json();
 				setUserList(logins);			
 			} catch (error) {
@@ -36,7 +36,7 @@ export default function Authorisation({onLoginSuccess} : AuthorisationProps) {
             setError('');
             setLoading(true);       
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch(`${VITE_API_WS}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json'},
                     body: JSON.stringify({login: selectedLogin.trim(), password})
@@ -72,7 +72,7 @@ export default function Authorisation({onLoginSuccess} : AuthorisationProps) {
 		}else{
 			setLoading(true);
 			try {
-				const response = await fetch('/api/auth/register', {
+				const response = await fetch(`${VITE_API_WS}/api/auth/register`, {
 					method: 'POST',
 					headers: {'Content-Type': '/application/json'},
 					body: JSON.stringify({
