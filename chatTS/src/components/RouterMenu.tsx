@@ -9,9 +9,9 @@ import { type IUserProfile, type IUserPublic } from '../types/auth';
 import { SocketProvider } from '../SocketContext';
 import type { IChatData } from '../types/chats';
 import CreateGropForm from './CreateGroupForm';
-import {VITE_API_WS} from '../../api.ts';
 
 function RouterMenu(){
+    const VITE_API_URL = "http://159.194.233.93:5000";
     const [theme, setTheme] = useState('light');
     const [currentTab, setCurrentTab] = useState<TTabType>('chats'); 
 	const [currentUser, setCurrentUser] = useState<IUserProfile | null>(null); 
@@ -27,7 +27,7 @@ function RouterMenu(){
     const handleContactClick = useCallback(async (targetUser: IUserPublic) => {
         const token = localStorage.getItem('token');
         if (!currentUser) return;
-        const response = await fetch(`${VITE_API_WS}/api/chats/find_chat`, {
+        const response = await fetch(`${VITE_API_URL}/api/chats/find_chat`, {
             method: 'POST',
 			headers: {
                 'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ function RouterMenu(){
 				return;
 			}
 			try {
-				const response = await fetch(`${VITE_API_WS}/api/auth/me`, {
+				const response = await fetch(`${VITE_API_URL}/api/auth/me`, {
 					method: 'GET',
 					headers: {
 						'Authorization': `Bearer ${token}`
@@ -99,7 +99,7 @@ function RouterMenu(){
     useEffect(() =>{
         async function fetchUsers() {
             try {
-                const response = await fetch(`${VITE_API_WS}/api/auth/usersName`);
+                const response = await fetch(`${VITE_API_URL}/api/auth/usersName`);
                 const users = await response.json();
                 setUsersList(users);			
             } catch (error) {
@@ -109,7 +109,7 @@ function RouterMenu(){
         async function fetchChats() {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`${VITE_API_WS}/api/chats/history_group`,{
+                const response = await fetch(`${VITE_API_URL}/api/chats/history_group`,{
                     'method':'GET',
                     'headers':{'Authorization': `Bearer ${token}`}
                 } );
@@ -173,7 +173,8 @@ function RouterMenu(){
                                 {currentTab === 'chats' && <ChatList currentUser={currentUser}
                                                                     onSelectChat={(chat) => handleChatClick(chat)}
                                                                     onStartCreateGroup={handleCreateGroup}
-                                                                    usersList={usersList}></ChatList>}
+                                                                    usersList={usersList}
+                                                                    routerChatsList={chatsList}></ChatList>}
                                 {currentTab === 'contacts' && <ContactList currentUser={currentUser} 
                                                                         onSelectContact={(user: IUserPublic) => handleContactClick(user)}
                                                                         userList={usersList}></ContactList>}

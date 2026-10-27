@@ -1,24 +1,27 @@
 import type { IUserProfile, IUserPublic } from "../types/auth";
 import { useEffect, useState} from "react";
 import { type IChatData} from "../types/chats"
-import {VITE_API_WS} from '../../api.ts';
 
 export interface IChatProps{
     currentUser: IUserProfile;
     onSelectChat: (chat: IChatData) => void; 
     onStartCreateGroup: () => void; 
-    usersList: IUserPublic[];  
+    usersList: IUserPublic[]; 
+    routerChatsList: IChatData[]; 
 }
 
-const ChatList = ({currentUser, onSelectChat, onStartCreateGroup, usersList}: IChatProps) => {
+const ChatList = ({currentUser, onSelectChat, 
+    onStartCreateGroup, usersList, routerChatsList}: IChatProps) => {
+    const VITE_API_URL = "http://159.194.233.93:5000";
     const [chatsList, setChatsList] = useState<IChatData[]>([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         let isMounted = true;
         async function fetchChats() {
+            setChatsList(routerChatsList);
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`${VITE_API_WS}/api/chats/history_group`,{
+                const response = await fetch(`${VITE_API_URL}/api/chats/history_group`,{
                     'method':'GET',
                     'headers':{'Authorization': `Bearer ${token}`}
                 } );

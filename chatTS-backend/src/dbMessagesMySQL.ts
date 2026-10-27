@@ -4,7 +4,7 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export async function saveMessageToHistory(text: string, senderId: string, chatId: string): Promise<string>{
     try {
-        const query: string = 'INSERT INTO Messages (chatId, senderId, text, timestamp) VALUES (?, ?, ?, ?)';
+        const query: string = 'INSERT INTO messages (chatId, senderId, text, timestamp) VALUES (?, ?, ?, ?)';
         const [result] = await pool.execute<ResultSetHeader>(query,
             [chatId, senderId, text, new Date(Date.now())]);          
         return result.insertId.toString();     

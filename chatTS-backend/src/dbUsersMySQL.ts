@@ -105,7 +105,7 @@ export async function createUser(login: string, firstName: string, lastName: str
         try {
             const lowerLogin: string = login.toLowerCase().trim();
             const passwordHash = await hashPassword(password);
-            const query: string = 'INSERT INTO Users (login, firstName, lastName, ' +
+            const query: string = 'INSERT INTO users (login, firstName, lastName, ' +
             'passwordHash) VALUES (?, ?, ?, ?)';
             const [result] = await pool.execute<ResultSetHeader>(query,
                 [lowerLogin, firstName, lastName, passwordHash]);        

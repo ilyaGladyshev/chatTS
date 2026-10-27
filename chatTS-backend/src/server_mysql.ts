@@ -42,6 +42,16 @@ function authEndpoint(req: http.IncomingMessage, res: http.ServerResponse){
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const pathname = url.pathname;
+    const allowedOrigin = 'http://localhost:3000';
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        res.statusCode = 204;
+        res.end();
+        return;
+    }
     try {
         if(req.method === 'POST' && pathname === '/api/chats/find_chat_by_id'){
             const chatId: string = url.searchParams.get('chatId') || 'chat_general';

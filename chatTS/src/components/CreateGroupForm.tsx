@@ -1,7 +1,6 @@
 import { type IUserPublic } from '../types/auth';
 import { useState } from 'react';
 import type { IChatData } from '../types/chats';
-import { VITE_API_WS } from '../../api';
 
 interface IGroupCreateFromProps{
     usersList: IUserPublic[];
@@ -9,6 +8,7 @@ interface IGroupCreateFromProps{
 }
 
 const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
+    const VITE_API_URL = "http://159.194.233.93:5000";
     const [selectedUsersId, setSelectedUserId] = useState<string[]>([]);
     const [groupName, setGroupName] = useState<string>('');
 
@@ -24,7 +24,7 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
         try {
             const token = localStorage.getItem('token');
             const participants = Array.from(selectedUsersId.values());
-            const response = await fetch(`${VITE_API_WS}/api/chats/create`,{
+            const response = await fetch(`${VITE_API_URL}/api/chats/create`,{
                 method: 'POST',
 				headers: {
                     'Content-Type': 'application/json',
