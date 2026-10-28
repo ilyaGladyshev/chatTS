@@ -12,7 +12,7 @@ export interface IChatProps{
 
 const ChatList = ({currentUser, onSelectChat, 
     onStartCreateGroup, usersList, routerChatsList}: IChatProps) => {
-    const VITE_API_URL = "http://159.194.233.93:5000";
+    const VITE_API_URL = "https://duckdns.org";
     const [chatsList, setChatsList] = useState<IChatData[]>([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {

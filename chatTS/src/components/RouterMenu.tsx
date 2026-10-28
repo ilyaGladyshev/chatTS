@@ -11,7 +11,7 @@ import type { IChatData } from '../types/chats';
 import CreateGropForm from './CreateGroupForm';
 
 function RouterMenu(){
-    const VITE_API_URL = "http://159.194.233.93:5000";
+    const VITE_API_URL = "https://duckdns.org";
     const [theme, setTheme] = useState('light');
     const [currentTab, setCurrentTab] = useState<TTabType>('chats'); 
 	const [currentUser, setCurrentUser] = useState<IUserProfile | null>(null); 

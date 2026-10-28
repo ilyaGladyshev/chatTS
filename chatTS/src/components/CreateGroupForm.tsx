@@ -8,7 +8,7 @@ interface IGroupCreateFromProps{
 }
 
 const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
-    const VITE_API_URL = "http://159.194.233.93:5000";
+    const VITE_API_URL = "https://duckdns.org";
     const [selectedUsersId, setSelectedUserId] = useState<string[]>([]);
     const [groupName, setGroupName] = useState<string>('');
 
