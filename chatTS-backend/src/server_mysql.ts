@@ -40,10 +40,21 @@ function authEndpoint(req: http.IncomingMessage, res: http.ServerResponse){
 }
 
 const server = http.createServer(async (req, res) => {
-    const url = new URL(req.url || '', `http://${req.headers.host}`);
+    const url = new URL(req.url || '', `https://${req.headers.host}`);
     const pathname = url.pathname;
-    const allowedOrigin = 'http://localhost:3000';
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    const allowedOrigins = [
+        'http://localhost:3000',          
+        'https://chat-ts-ten.vercel.app', 
+    ];
+
+    const origin = req.headers.origin || '';
+
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+        // Для отладки можно временно разрешить всё, но только локально:
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 

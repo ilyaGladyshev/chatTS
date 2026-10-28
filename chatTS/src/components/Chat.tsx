@@ -13,7 +13,7 @@ interface IChatProps{
     activeChat: IChatData | undefined | null;
 }
 const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, activeChat}: IChatProps) => {
-    const VITE_API_URL = "https://duckdns.org";
+    const VITE_API_URL = "https://gladyshzoda.duckdns.org";
     const [messages, setMessages]  = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
     const {socket} = useSocket();
