@@ -11,14 +11,13 @@ export interface IChatProps{
 }
 
 const ChatList = ({currentUser, onSelectChat, 
-    onStartCreateGroup, usersList, routerChatsList}: IChatProps) => {
+    onStartCreateGroup, usersList}: IChatProps) => {
     const VITE_API_URL = "https://gladyshzoda.duckdns.org";
     const [chatsList, setChatsList] = useState<IChatData[]>([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         let isMounted = true;
         async function fetchChats() {
-            setChatsList(routerChatsList);
             try {
                 const token = localStorage.getItem('token');
                 const response = await fetch(`${VITE_API_URL}/api/chats/history_group`,{

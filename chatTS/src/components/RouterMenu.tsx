@@ -126,7 +126,7 @@ function RouterMenu(){
     if (loading){
         return (
             <div className={theme === 'dark' ? 'dark-theme' : ''}>
-                Идет загрузка пользлвателя, пожалуйста, подождите...
+                Идет загрузка пользователя, пожалуйста, подождите...
             </div>
         )
     }
@@ -174,7 +174,7 @@ function RouterMenu(){
                                                                     onSelectChat={(chat) => handleChatClick(chat)}
                                                                     onStartCreateGroup={handleCreateGroup}
                                                                     usersList={usersList}
-                                                                    routerChatsList={chatsList}></ChatList>}
+                                                                    ></ChatList>}
                                 {currentTab === 'contacts' && <ContactList currentUser={currentUser} 
                                                                         onSelectContact={(user: IUserPublic) => handleContactClick(user)}
                                                                         userList={usersList}></ContactList>}

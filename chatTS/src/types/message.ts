@@ -5,7 +5,7 @@ export interface IMessage{
     senderId: string;
     text: string;
     timestamp: number;
-    chatId: string;
+    chatId: string | null;
     status?: TMessageStatus;
 }
 

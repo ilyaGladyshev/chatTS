@@ -56,7 +56,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
 
     useEffect(() => {
         try {
-            if (!socket || !activeChatId || !currentUser.id) return;
+            if (!socket || !currentUser.id) return;
             socketRef.current = socket;
             setCurrentChatId(activeChatId);
             const handleReceiveMessage = (e: MessageEvent) => {
@@ -100,17 +100,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!currentChatId) return;
         const tempId = `pending_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-        const newPendingMessage: IMessage = {
-            id: tempId,
-            senderId: currentUser.id,
-            text: inputText.trim(),
-            timestamp: Date.now(),
-            chatId: currentChatId,
-            status: 'pending'
-        };
-        setMessages((prev) => [...prev, newPendingMessage]);
         const token = localStorage.getItem('token');
         if (!targetUser) return;
         if (!socketRef) return;
@@ -138,6 +128,15 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
         }
         if (!inputText.trim() || !socketRef.current) return;
         if (!newChatId) return;
+        const newPendingMessage: IMessage = {
+            id: tempId,
+            senderId: currentUser.id,
+            text: inputText.trim(),
+            timestamp: Date.now(),
+            chatId: newChatId,
+            status: 'pending'
+        };
+        setMessages((prev) => [...prev, newPendingMessage]);        
         const packet = {
             type: 'message',
             text: inputText.trim(),

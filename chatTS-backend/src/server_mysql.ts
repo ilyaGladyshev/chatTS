@@ -208,30 +208,52 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-const wss = new WebSocketServer({server});
+const wss = new WebSocketServer({noServer: true});
 const clients = new Map<string, WebSocket>;
 
-wss.on('connection', async (socket, req) =>  {
-    console.log('Новое WebSocket соединение установлено!');
-    const baseUrl = `http://${req.headers.host}`;
-    const url = new URL(req.url || '',  baseUrl);
+wss.on('upgrade', (req, socket, head) => {
+    console.log('Получен upgrade-запрос, URL:', req.url);
+    const url = new URL('https://host' + req.url, 'https://host');
     const token = url.searchParams.get('token');
     const decodedUser = verifyToken(token || '');
+    console.log('Получен токен:', token ? 'есть' : 'нет');
     if (!decodedUser){
         console.error("Попытка несанкционированного доступа!");
         socket.close(4001, 'Несанкционированный доступ');
         return;
-    }    
-    let currentUserId: string | undefined = decodedUser?.id;
+    } 
+    
+    (req as any).currentUserId = decodedUser.id;
+
+    wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req); 
+    });
+});
+
+wss.on('connection', async (socket, req) =>  {
+    console.log('Новое WebSocket соединение установлено!');
+
+    const currentUserId = (req as any).currentUserId;
+    console.log('Текущий пользователь:', currentUserId);
+    (socket as any).userId = currentUserId;
     socket.on("message", async (rawData) => {
         try {
-            const packet = JSON.parse(rawData.toString());
+            const messageString = Buffer.isBuffer(rawData) 
+                ? rawData.toString() 
+                : Array.isArray(rawData) 
+                ? Buffer.concat(rawData).toString() 
+                : String(rawData);
+            const packet = JSON.parse(messageString);
+            console.log('Получен пакет:', packet);
             if (packet.type === 'auth'){
-                currentUserId = currentUserId;
-                clients.set(decodedUser.id.toString(), socket);
-                console.log(`Пользователь ${decodedUser.id} успешно подключился!`);
-            }
-            else if (packet.type === 'message'){
+                const myId = (socket as any).userId;            
+                if (myId) {
+                    clients.set(myId.toString(), socket);
+                    console.log(`Пользователь ${myId} успешно добавлен в Map подключений!`);
+                } else {
+                    console.error('Не удалось определить ID пользователя для Map клиентов');           
+                }
+            } else if (packet.type === 'message'){
                 const {text, senderId, chatId} = packet;
                 try {
 
@@ -271,11 +293,15 @@ wss.on('connection', async (socket, req) =>  {
     });
 
     socket.on('close', () => {
-        console.log('Соединение закрыто!');
+        console.log(`Соединение закрыто!`);
         if (currentUserId){
             clients.delete(currentUserId);
         }
     });
+});
+
+server.on('upgrade', (req, socket, head) => {
+    wss.emit('upgrade', req, socket, head); 
 });
 
 server.listen(PORT, '0.0.0.0', () => {

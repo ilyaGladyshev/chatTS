@@ -16,7 +16,6 @@ export const SocketProvider: React.FC<{ userId: string | undefined; children: Re
  ({ userId, 
     children}) => {
     const VITE_API_WS = "wss://gladyshzoda.duckdns.org";
-    const [socket, setSocket] = useState<WebSocket | null>(null);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const socketRef = useRef<WebSocket | null>(null);
     const socketForUI = socketRef.current;
@@ -25,7 +24,6 @@ export const SocketProvider: React.FC<{ userId: string | undefined; children: Re
             if (socketRef.current){
                 socketRef.current.close();
                 socketRef.current = null;
-                setSocket(null);
             }
             setIsConnected(false);
             return;
@@ -42,7 +40,6 @@ export const SocketProvider: React.FC<{ userId: string | undefined; children: Re
         if (socketRef.current){
             socketRef.current.close();
             socketRef.current = null;
-            setSocket(null);
         }
 
         const wsURL = `${VITE_API_WS}?token=${token}`;
@@ -69,22 +66,16 @@ export const SocketProvider: React.FC<{ userId: string | undefined; children: Re
                 console.log('Размонтирование провайдера закрываем сокет');
                 socketRef.current.close();
                 socketRef.current = null;
-                setSocket(null);
            }
         };
     }, [userId]);
 
     const sendMessage = (event: string, data: any) =>{
-        if (socket && socket.readyState === WebSocket.OPEN){
+        if (socketForUI && socketForUI.readyState === WebSocket.OPEN){
             const payload = JSON.stringify({event, data});
-            socket.send(payload);
-        } else if (socket && socket.readyState === WebSocket.CONNECTING){
+            socketForUI.send(payload);
+        } else if (socketForUI && socketForUI.readyState === WebSocket.CONNECTING){
             console.warn('Соединение еще устанавливается');
-            /*const currOnOpen = socket.onopen;
-            socket.onopen = (e) => {
-                if (currOnOpen) currOnOpen.call(socket, e);
-                socket.send(JSON.stringify({event, data}));
-            }*/
         } else {
             console.warn('Попытка отправить сообщение через закрытый сокет');
         }
