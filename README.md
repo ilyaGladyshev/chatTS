@@ -23,7 +23,6 @@ Fullstack-приложение для обмена сообщениями в р�
 ---
 
 ![Чат](/assets/Chat.jpg)
-![Темная тема](/assets/GroupChatCreate.jpg)
 
 ## 🛠️ Стек технологий
 
@@ -128,6 +127,11 @@ WebSocket: подключение с токеном, например
 ws://localhost:5000?token=<JWT>
 ---
 
+### 6. Деплой
+
+Приложение размешено на ресурсах Vercel и Render и доступно по адресам https://chat-ts-ten.vercel.app и https://chatts-dk6v.onrender.com (доступ через VPN, без него не грузится).
+![Деплой создание группы](/assets/DeployDark.png)
+![Деплой чат](/assets/deployLight.png)
 Автор
 Илья Гладышев
 GitHub: ilyaGladyshev
