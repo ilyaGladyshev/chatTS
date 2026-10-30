@@ -1,13 +1,17 @@
 import { type IUserPublic } from '../types/auth';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { IChatData } from '../types/chats';
+import {type IUserProfile} from '../types/auth';
 
 interface IGroupCreateFromProps{
+    currentUser: IUserProfile;
     usersList: IUserPublic[];
     onGroupCreated: (newChat: IChatData) => void;
 }
 
-const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
+const CreateGropForm = ({ currentUser,
+                          usersList,
+                           onGroupCreated}: IGroupCreateFromProps) => {
     const VITE_API_URL = "https://gladyshzoda.duckdns.org";
     const [selectedUsersId, setSelectedUserId] = useState<string[]>([]);
     const [groupName, setGroupName] = useState<string>('');
@@ -18,6 +22,10 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
             : [...prev, selectedId]
         )
     }
+
+    useEffect(() => {
+        setSelectedUserId((prev) => [...prev, currentUser.id]);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,7 +65,8 @@ const CreateGropForm = ({usersList, onGroupCreated}: IGroupCreateFromProps) => {
                         value={groupName}
                         onChange={(e) => setGroupName(e.target.value)}/>
                 <h4>Выберите участников группы:</h4>
-                {usersList.map((user: IUserPublic) => (
+                {usersList.filter((user) => ( user.id != currentUser.id ))
+                          .map((user: IUserPublic) => (
                     <div className='group-participants'>
                         <label>
                             <input key={user.id}

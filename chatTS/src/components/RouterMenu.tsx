@@ -173,7 +173,8 @@ function RouterMenu(){
                                             ></Chat>
                                     )}  
                                     {chatState?.mode === 'create_group' && (
-                                        <CreateGropForm usersList={usersList}
+                                        <CreateGropForm currentUser={currentUser}
+                                                        usersList={usersList}
                                                         onGroupCreated={
                                                             (newChat: IChatData)=> {
                                                                 const targetUsers : (IUserPublic | undefined)[] = newChat.participants.map((userId: string) => { 

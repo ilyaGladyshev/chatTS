@@ -18,7 +18,7 @@ const ChatList = ({currentUser, onSelectChat,
     useEffect(() => {
         setChatsList(chatList);
         setLoading(isLoading);
-    }, [currentUser])
+    }, [currentUser, chatList, isLoading])
 
     const getChatName = (chat: IChatData) => {
         if (chat.isGroup && chat.name) return chat.name;
