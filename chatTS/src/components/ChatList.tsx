@@ -16,12 +16,8 @@ const ChatList = ({currentUser, onSelectChat,
     const [loading, setLoading] = useState(true);
     const { chatList, isLoading} = useChats();    
     useEffect(() => {
-        let isMounted = true;
         setChatsList(chatList);
         setLoading(isLoading);
-        return () => {
-            isMounted = false; 
-        };
     }, [currentUser])
 
     const getChatName = (chat: IChatData) => {
