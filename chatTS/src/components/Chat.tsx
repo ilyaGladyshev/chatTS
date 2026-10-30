@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {type IUserProfile, type IUserPublic} from '../types/auth';
 import { type IMessage} from '../types/message';
-import { useSocket } from '../SocketContext';
+import { useSocket } from './SocketContext';
 import '../App.css';
 import { type IChatData } from '../types/chats';
 
@@ -9,10 +9,9 @@ interface IChatProps{
     currentUser: IUserProfile;
     activeChatId: string | null;
     targetUser: (IUserPublic | undefined)[] | null;
-    onNewMessageReceived: (msg: any) => void;
     activeChat: IChatData | undefined | null;
 }
-const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, activeChat}: IChatProps) => {
+const Chat = ({currentUser, activeChatId, targetUser, activeChat}: IChatProps) => {
     const VITE_API_URL = "https://gladyshzoda.duckdns.org";
     const [messages, setMessages]  = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
@@ -84,8 +83,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
                         }
                     }
                     return updated;
-                });                 
-                onNewMessageReceived(data);
+                });                
                 scrollToBottom();            
             }
             socket.addEventListener('message', handleReceiveMessage);
@@ -96,7 +94,7 @@ const Chat = ({currentUser, activeChatId, targetUser, onNewMessageReceived, acti
             
         }
 
-    }, [socket, activeChatId, currentUser.id, onNewMessageReceived]);
+    }, [socket, activeChatId, currentUser.id]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();

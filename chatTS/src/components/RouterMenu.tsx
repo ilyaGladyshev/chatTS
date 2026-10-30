@@ -6,7 +6,8 @@ import ContactList from './ContactList';
 import Settings from './Settings';
 import { type TTabType, type IChatState } from '../types/menu';
 import { type IUserProfile, type IUserPublic } from '../types/auth';
-import { SocketProvider } from '../SocketContext';
+import { SocketProvider } from './SocketContext';
+import { ChatProvider } from './ChatContext';
 import type { IChatData } from '../types/chats';
 import CreateGropForm from './CreateGroupForm';
 
@@ -15,9 +16,7 @@ function RouterMenu(){
     const [theme, setTheme] = useState('light');
     const [currentTab, setCurrentTab] = useState<TTabType>('chats'); 
 	const [currentUser, setCurrentUser] = useState<IUserProfile | null>(null); 
-    const [activeChatId] = useState<string|null>(null); 
     const [chatState, setChatState] = useState<IChatState | null>(null);
-    const [chatsList, setChatsList] = useState<IChatData[]>([]);
     const [usersList, setUsersList] = useState<IUserPublic[]>([]);
     const [loading, setLoading] = useState<boolean>(true);    
     const toggleTheme = () => {
@@ -57,16 +56,6 @@ function RouterMenu(){
         setChatState({mode: 'view', chatId: chat.id, targetUser: targetUsers, chat: chat});        
     }, [currentUser]);
 
-    const handleUpdateLastMesage = useCallback((chatId: string | null, incommingMessage: any) => {
-        setChatsList((prevChats) => 
-            prevChats.map((chat) => 
-                chat.id === chatId
-                ? {...chat, lastMessage: incommingMessage}
-                : chat
-            )
-        );
-    },[]);
-    
     useEffect(() => {
 	async function checkAutoLogin(){
 			const token = localStorage.getItem('token');
@@ -106,20 +95,6 @@ function RouterMenu(){
                 console.error('Не удалось загрузить пользователей', error);	
             }
         }        
-        async function fetchChats() {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${VITE_API_URL}/api/chats/history_group`,{
-                    'method':'GET',
-                    'headers':{'Authorization': `Bearer ${token}`}
-                } );
-                const chatsResponse = await response.json();
-                setChatsList(chatsResponse);			
-            } catch (error) {
-                console.error('Не удалось загрузить чаты', error);	
-            }
-        }        
-        fetchChats();
         fetchUsers();
     }, [currentUser]);
 
@@ -157,58 +132,60 @@ function RouterMenu(){
             ) : (
                 <div>
                     <SocketProvider userId = {currentUser.id}>
-                        <aside className='sidebar'>
-                            <h3>Добро пожаловать, {currentUser.firstName}</h3>
-                            <nav>
-                                <button className={currentTab === 'chats' ? 'button-active' : ''}
-                                        onClick={() => setCurrentTab('chats')}>Чаты</button>
-                                <button className={currentTab === 'contacts' ? 'button-active' : ''}
-                                                        onClick={() => setCurrentTab('contacts')}>Контакты</button>                      
-                                <button className={currentTab === 'settings' ? 'button-active' : ''}
-                                                        onClick={() => setCurrentTab('settings')}>Настройки</button>  
-                            </nav>
-                        </aside>
-                        <main className='menu-content'>
-                            <div className='menu-content-left'>
-                                {currentTab === 'chats' && <ChatList currentUser={currentUser}
-                                                                    onSelectChat={(chat) => handleChatClick(chat)}
-                                                                    onStartCreateGroup={handleCreateGroup}
-                                                                    usersList={usersList}
-                                                                    ></ChatList>}
-                                {currentTab === 'contacts' && <ContactList currentUser={currentUser} 
-                                                                        onSelectContact={(user: IUserPublic) => handleContactClick(user)}
-                                                                        userList={usersList}></ContactList>}
-                                {currentTab === 'settings' && <Settings></Settings>}
-                            </div>
-                            <div className='menu-content-right'>
-                                {chatState?.mode === 'view' && chatState.chatId && (
-                                    <Chat activeChatId={chatState.chatId}
-                                          currentUser={currentUser}
-                                          targetUser={chatState.targetUser}
-                                          activeChat={chatState.chat}
-                                          onNewMessageReceived={(msg) => handleUpdateLastMesage(activeChatId, msg)}>
-                                          </Chat>
-                                )}
-                                {chatState?.mode === 'create_private' && chatState.targetUser && (
-                                    <Chat activeChatId={null}
-                                          currentUser={currentUser}
-                                          targetUser={chatState.targetUser}
-                                          activeChat={chatState.chat}
-                                          onNewMessageReceived={(msg) => handleUpdateLastMesage(activeChatId, msg)}></Chat>
-                                )}  
-                                {chatState?.mode === 'create_group' && (
-                                    <CreateGropForm usersList={usersList}
-                                                    onGroupCreated={
-                                                        (newChat: IChatData)=> {
-                                                            const targetUsers : (IUserPublic | undefined)[] = newChat.participants.map((userId: string) => { 
-                                                                return usersList.find((user) => user.id === userId)
-                                                            });
-                                                            setChatState({mode: 'view', chatId: newChat.id, targetUser: targetUsers, chat: newChat})
+                        <ChatProvider>
+                            <aside className='sidebar'>
+                                <h3>Добро пожаловать, {currentUser.firstName}</h3>
+                                <nav>
+                                    <button className={currentTab === 'chats' ? 'button-active' : ''}
+                                            onClick={() => setCurrentTab('chats')}>Чаты</button>
+                                    <button className={currentTab === 'contacts' ? 'button-active' : ''}
+                                                            onClick={() => setCurrentTab('contacts')}>Контакты</button>                      
+                                    <button className={currentTab === 'settings' ? 'button-active' : ''}
+                                                            onClick={() => setCurrentTab('settings')}>Настройки</button>  
+                                </nav>
+                            </aside>
+                            <main className='menu-content'>
+                                <div className='menu-content-left'>
+                                    {currentTab === 'chats' && <ChatList currentUser={currentUser}
+                                                                        onSelectChat={(chat) => handleChatClick(chat)}
+                                                                        onStartCreateGroup={handleCreateGroup}
+                                                                        usersList={usersList}
+                                                                        ></ChatList>}
+                                    {currentTab === 'contacts' && <ContactList currentUser={currentUser} 
+                                                                            onSelectContact={(user: IUserPublic) => handleContactClick(user)}
+                                                                            userList={usersList}></ContactList>}
+                                    {currentTab === 'settings' && <Settings></Settings>}
+                                </div>
+                                <div className='menu-content-right'>
+                                    {chatState?.mode === 'view' && chatState.chatId && (
+                                        <Chat activeChatId={chatState.chatId}
+                                            currentUser={currentUser}
+                                            targetUser={chatState.targetUser}
+                                            activeChat={chatState.chat}
+                                            >
+                                            </Chat>
+                                    )}
+                                    {chatState?.mode === 'create_private' && chatState.targetUser && (
+                                        <Chat activeChatId={null}
+                                            currentUser={currentUser}
+                                            targetUser={chatState.targetUser}
+                                            activeChat={chatState.chat}
+                                            ></Chat>
+                                    )}  
+                                    {chatState?.mode === 'create_group' && (
+                                        <CreateGropForm usersList={usersList}
+                                                        onGroupCreated={
+                                                            (newChat: IChatData)=> {
+                                                                const targetUsers : (IUserPublic | undefined)[] = newChat.participants.map((userId: string) => { 
+                                                                    return usersList.find((user) => user.id === userId)
+                                                                });
+                                                                setChatState({mode: 'view', chatId: newChat.id, targetUser: targetUsers, chat: newChat})
+                                                            }
                                                         }
-                                                    }
-                                    ></CreateGropForm>)}                        
-                            </div>      
-                        </main>
+                                        ></CreateGropForm>)}                        
+                                </div>      
+                            </main>
+                        </ChatProvider>
                     </SocketProvider>
                 </div>
             )}                      

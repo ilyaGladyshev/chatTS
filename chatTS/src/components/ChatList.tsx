@@ -1,50 +1,29 @@
 import type { IUserProfile, IUserPublic } from "../types/auth";
 import { useEffect, useState} from "react";
 import { type IChatData} from "../types/chats"
+import { useChats } from './ChatContext';
 
 export interface IChatProps{
     currentUser: IUserProfile;
     onSelectChat: (chat: IChatData) => void; 
     onStartCreateGroup: () => void; 
     usersList: IUserPublic[]; 
-    routerChatsList: IChatData[]; 
 }
 
 const ChatList = ({currentUser, onSelectChat, 
     onStartCreateGroup, usersList}: IChatProps) => {
-    const VITE_API_URL = "https://gladyshzoda.duckdns.org";
     const [chatsList, setChatsList] = useState<IChatData[]>([]);
     const [loading, setLoading] = useState(true);
+    const { chatList, isLoading} = useChats();    
     useEffect(() => {
         let isMounted = true;
-        async function fetchChats() {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${VITE_API_URL}/api/chats/history_group`,{
-                    'method':'GET',
-                    'headers':{'Authorization': `Bearer ${token}`}
-                } );
-                const chatsResponse = await response.json();
-                if (isMounted) {
-                    setChatsList(chatsResponse);
-                    setLoading(false);
-                }		
-            } catch (error) {
-                console.error('Не удалось загрузить чаты', error);	
-            }
-        } 
-
-        if (currentUser) {
-            fetchChats();
-        } else {
-            setChatsList([]);
-            setLoading(false);
-        }
-
+        setChatsList(chatList);
+        setLoading(isLoading);
         return () => {
             isMounted = false; 
         };
     }, [currentUser])
+
     const getChatName = (chat: IChatData) => {
         if (chat.isGroup && chat.name) return chat.name;
         const companionId = chat.participants.find(id => id != currentUser.id.toString());
@@ -52,7 +31,7 @@ const ChatList = ({currentUser, onSelectChat,
         if (companion) return companion.userName;
         else return 'Неизвестный собеседник';
     }
-    
+
     if (loading) {
         return <div>Загрузка чатов...</div>;
     }

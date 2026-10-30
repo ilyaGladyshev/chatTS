@@ -202,7 +202,7 @@ body.dark-theme, .dark-theme {
 }
 
 .dark-theme .chat-textbox-my {
-  background: silver; /* спокойный синий */
+  background: silver;
   color: #fff;
   border: none;
 }

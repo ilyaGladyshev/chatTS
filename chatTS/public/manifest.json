@@ -1,0 +1,21 @@
+{
+  "short_name": "Чат TS",
+  "name": "Чат TypeScript",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#121212",
+  "theme_color": "#1a1a1a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
