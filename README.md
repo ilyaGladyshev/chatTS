@@ -129,7 +129,7 @@ ws://localhost:5000?token=<JWT>
 
 ### 6. Деплой
 - **Frontend** [https://chat-ts-ten.vercel.app](https://chat-ts-ten.vercel.app)
-- **Backend** [gladyshzoda.duckdns.org](gladyshzoda.duckdns.org)
+- **Backend** [https://gladyshzoda.duckdns.org](https://gladyshzoda.duckdns.org)
 
 Из части сетей (в т.ч. без  VPN) фронтенд или API могут быть недоступны - ниже скриншоты рабочей версии.
 
