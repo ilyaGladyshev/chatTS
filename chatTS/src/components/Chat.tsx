@@ -12,7 +12,7 @@ interface IChatProps{
     activeChat: IChatData | undefined | null;
 }
 const Chat = ({currentUser, activeChatId, targetUser, activeChat}: IChatProps) => {
-    const VITE_API_URL = "https://gladyshzoda.duckdns.org";
+    const VITE_API_URL = import.meta.env.VITE_API_URL;
     const [messages, setMessages]  = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
     const {socket} = useSocket();

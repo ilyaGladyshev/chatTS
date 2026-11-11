@@ -16,7 +16,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode}> = ({ children 
   const [chatList, setChatList] = useState<IChatData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const {socket, on, off} = useSocket();  
-  const VITE_API_URL = "https://gladyshzoda.duckdns.org";
+  const VITE_API_URL = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const fetchChats = async () => {
         try {

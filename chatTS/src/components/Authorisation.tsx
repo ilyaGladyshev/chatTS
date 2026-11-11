@@ -14,7 +14,7 @@ export default function Authorisation({onLoginSuccess} : AuthorisationProps) {
     const [stage, setStage] = useState<EAuthStage>(EAuthStage.Auth)
     const [firstName, setFirstName] = useState<string>('');
     const [lastName, setLastName] = useState<string>('');  
-    const VITE_API_URL = "https://gladyshzoda.duckdns.org";
+    const VITE_API_URL = import.meta.env.VITE_API_URL;
          
 	useEffect(() =>{
 		async function fetchUsers() {

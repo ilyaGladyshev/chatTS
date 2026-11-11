@@ -28,7 +28,7 @@ const SocketContext = createContext<ISocketContext>({
 
 export const SocketProvider: React.FC<{ userId: string | undefined; children: React.ReactNode}> =
  ({ userId, children }) => {
-    const VITE_API_WS = "wss://gladyshzoda.duckdns.org";
+    const VITE_API_WS = import.meta.env.VITE_API_WS;
     
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [socketInstance, setSocketInstance] = useState<WebSocket | null>(null);
