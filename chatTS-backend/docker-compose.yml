@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  chat_mysql:
+    image: mysql:8.0
+    container_name: chat_mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - chat_mysql_data:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+  # Бэкенд мессенджера ChatTS
+  chat-backend:
+    build: ./chatTS-backend
+    container_name: chat_backend_app
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      PORT: 5000
+    depends_on:
+      - chat_mysql
+    networks:
+      - app-network
+
+  nginx_proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx_proxy
+    restart: always
+    ports:
+      - '80:80'   # HTTP Трафик
+      - '81:81'   # Админка NPM
+      - '443:443' # HTTPS Трафик
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - chat-backend
+    networks:
+      - app-network
+
+volumes:
+  chat_mysql_data: {}
+
+networks:
+  app-network:
+    driver: bridge

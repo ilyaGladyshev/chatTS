@@ -1,5 +1,6 @@
 CREATE DATABASE IF NOT EXISTS chat_ts CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE chat_ts;CREATE TABLE `chats` (
+USE chat_ts;
+CREATE TABLE `chats` (
   `id` int NOT NULL AUTO_INCREMENT,
   `is_group` tinyint DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,

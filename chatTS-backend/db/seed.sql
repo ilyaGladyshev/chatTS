@@ -1,3 +1,4 @@
+USE chat_ts;
 INSERT INTO `chats` VALUES (1,0,''),(16,1,'SNATCH'),(20,0,''),(21,0,''),(22,0,''),(23,0,''),(29,1,'Новый чат');
 /*!40000 ALTER TABLE `chats` ENABLE KEYS */;
 
