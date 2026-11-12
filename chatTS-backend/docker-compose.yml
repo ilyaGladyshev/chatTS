@@ -1,10 +1,9 @@
-version: '3.8'
-
 services:
   chat_mysql:
     image: mysql:8.0
     container_name: chat_mysql_db
     restart: always
+    command: --innodb_buffer_pool_size=64M --innodb_log_buffer_size=1M --max_connections=20    
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
@@ -13,17 +12,20 @@ services:
       - chat_mysql_data:/var/lib/mysql
       - ./db:/docker-entrypoint-initdb.d
     networks:
-      - app-network
+      - chat_net
+      - task_network    
 
   # Бэкенд мессенджера ChatTS
   chat-backend:
-    build: ./chatTS-backend
+    build: .
+    env_file:
+      - .env    
     container_name: chat_backend_app
     restart: always
     ports:
       - "5000:5000"
     environment:
-      DB_HOST: ${DB_HOST}
+      DB_HOST: chat_mysql
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
@@ -31,7 +33,7 @@ services:
     depends_on:
       - chat_mysql
     networks:
-      - app-network
+      - chat_net
 
   nginx_proxy:
     image: 'jc21/nginx-proxy-manager:latest'
@@ -47,11 +49,13 @@ services:
     depends_on:
       - chat-backend
     networks:
-      - app-network
+      - chat_net
 
 volumes:
   chat_mysql_data: {}
 
 networks:
-  app-network:
+  chat_net:
     driver: bridge
+  task_network: 
+    external: true
