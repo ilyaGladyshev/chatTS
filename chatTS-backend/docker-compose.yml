@@ -34,6 +34,18 @@ services:
       - chat_mysql
     networks:
       - chat_net
+  chat-frontend:
+    image: nginx:alpine
+    restart: always
+    build:
+      context: .  
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_API_WS: ${VITE_API_WS}
+    ports:
+      - "127.0.0.1:3001:80"
+    networks:
+      - chat_net 
 
   nginx_proxy:
     image: 'jc21/nginx-proxy-manager:latest'
@@ -57,5 +69,9 @@ volumes:
 networks:
   chat_net:
     driver: bridge
+  chat_front: 
+    external: true
+    name: chat_front
   task_network: 
     external: true
+    name: task_network

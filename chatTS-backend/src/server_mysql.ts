@@ -43,8 +43,10 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '', `https://${req.headers.host}`);
     const pathname = url.pathname;
     const allowedOrigins = [
-        'http://localhost:3000',          
-        'https://chat-ts-ten.vercel.app', 
+        'http://localhost:3000', 
+        'http://gladyshzoda.dukdns.org',         
+        'https://chat-ts-ten.vercel.app',
+        'https://chat-front.gladyshzoda.duckdns.org',         
     ];
 
     const origin = req.headers.origin || '';
